@@ -1,0 +1,8 @@
+decomposeParHB.C
+domainDecomposition.C
+domainDecompositionMesh.C
+domainDecompositionDistribute.C
+dimFieldDecomposer.C
+pointFieldDecomposer.C
+
+EXE = $(FOAM_APPBIN)/decomposeParHB

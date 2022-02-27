@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd src && { ./Allwmake; cd ..; }
+
+cd applications && { ./Allwmake; cd ..; }

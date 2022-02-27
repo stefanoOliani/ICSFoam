@@ -1,0 +1,64 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  1.4.1                                 |
+|   \\  /    A nd           | Web:      http://www.openfoam.org               |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+// FoamX Case Dictionary.
+
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+
+    root            "";
+    case            "";
+    instance        "";
+    local           "";
+
+    class           dictionary;
+    object          fvSolution;
+}
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers {}
+
+flowSolver
+{
+    solver            GMRES;
+    GMRES
+    {
+        preconditioner    LUSGS;
+        maxIter           10;
+        nDirections           5;
+        tolerance         1e-6;
+        relTol      1e-1;
+    }
+}
+
+pseudoTime
+{
+    nPseudoCorr       100;
+    pseudoTol         1e-8;
+    pseudoTolRel      1e-8;
+    pseudoCoMin       100;
+    pseudoCoNum       100;
+    pseudoCoNumMax    100;
+}
+
+fieldBounds
+{
+    // With bounding
+    p      1e-6     1e6;
+    rho    1e-6     1e6;
+    e      1e-6     1e6;
+    h      1e-6     1e6;
+    rhoE   1e-6     1e6;
+    T      1e-6    3000;
+    U    1000;
+}
+
+// ************************************************************************* //

@@ -1,0 +1,3 @@
+dbnsFullyImplicitHBFoam.C
+
+EXE = $(FOAM_APPBIN)/dbnsFullyImplicitHBFoam

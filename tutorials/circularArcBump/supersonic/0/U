@@ -1,0 +1,58 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (486.8 0 0);
+
+boundaryField
+{
+    INLE1
+    {
+        type            characteristicPressureInletOutletVelocity;
+        p               1e5;
+        U               (486.8 0 0);
+        T               300;
+        value           uniform (486.8 0 0);
+    }
+
+    PRES2
+    {
+        type            characteristicPressureInletOutletVelocity;
+        p               1e5;
+        U               (300 0 0);
+        T               300;
+        value           uniform (300 0 0);
+    }
+
+    WALL3
+    {
+        type            slip;
+    }
+
+    WALL4
+    {
+        type            slip;
+    }
+
+    defaultFaces
+    {
+        type            empty;
+    }
+}
+
+// ************************************************************************* //

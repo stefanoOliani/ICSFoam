@@ -1,0 +1,72 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+convectiveFluxScheme      
+{
+    fluxScheme	HLLC;
+}
+
+viscousFluxScheme
+{
+   LaxFriedrichJacobian  true;
+}
+
+ddtSchemes
+{
+    default dualTime rPseudoDeltaT steadyState;
+}
+
+gradSchemes
+{
+    default         Gauss linear;
+}
+
+divSchemes
+{
+    default         none;
+    div(tauMC)        Gauss linear;
+}
+
+laplacianSchemes
+{
+    default         Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default               linear;
+    reconstruct(rho) Minmod;
+    reconstruct(U)  Minmod;
+    reconstruct(T)  Minmod;
+}
+
+snGradSchemes
+{
+    default         corrected;
+}
+
+
+fluxRequired
+{
+    default         no;
+}
+
+wallDist
+{
+    method      meshWave;
+}
+
+// ************************************************************************* //

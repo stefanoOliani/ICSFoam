@@ -1,0 +1,21 @@
+EXE_INC = \
+    -I../finiteVolume/lnInclude \
+    -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(LIB_SRC)/fileFormats/lnInclude \
+    -I$(LIB_SRC)/surfMesh/lnInclude \
+    -I$(LIB_SRC)/meshTools/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
+    -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
+    -I$(LIB_SRC)/transportModels/compressible/lnInclude 
+
+LIB_LIBS = \
+    -lfiniteVolume \
+    -lfileFormats \
+    -lsurfMesh \
+    -lmeshTools \
+    -L$(FOAM_USER_LIBBIN) \
+    -lICSFiniteVolume \
+    -lfluidThermophysicalModels \
+    -lcompressibleTransportModels \
+    -lspecie \
+

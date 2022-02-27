@@ -1,0 +1,6 @@
+#!/bin/sh
+
+wmake libso finiteVolume
+wmake libso OpenFOAM
+wmake libso meshTools
+

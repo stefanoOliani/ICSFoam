@@ -1,0 +1,40 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+|                                                                             |
+|    HiSA: High Speed Aerodynamic solver                                      |
+|                                                                             |
+|    Copyright (C) 2014-2017 Johan Heyns - CSIR, South Africa                 |
+|    Copyright (C) 2014-2017 Oliver Oxtoby - CSIR, South Africa               |
+|                                                                             |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      setFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+defaultFieldValues 
+(
+    volVectorFieldValue U ( 0 0 0 )
+    volScalarFieldValue T 348.432
+    volScalarFieldValue p 100000
+);
+
+regions
+(
+    boxToCell
+    {
+        box ( 0 -1 -1 ) ( 0.5 1 1 );
+        fieldValues
+        (
+            volScalarFieldValue T 278.746
+            volScalarFieldValue p 10000
+        );
+    }
+);
+
+
+// ************************************************************************* //

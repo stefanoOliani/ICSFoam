@@ -1,0 +1,8 @@
+#!/bin/sh
+
+wmake solvers/dbnsFoam
+wmake solvers/dbnsFullyImplicitHBFoam
+wmake solvers/reconstructHBFoam
+
+cd utilities && { ./Allwmake; cd ..; }
+

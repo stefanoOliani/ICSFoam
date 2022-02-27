@@ -1,0 +1,76 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  3.0.0                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "(omega|k|epsilon).*"
+    {
+        solver	smoothSolver;
+	smoother	symGaussSeidel;
+        tolerance       1e-7;
+	maxIter		30;
+	nSweeps		3;
+    }
+}
+
+flowSolver
+{
+    solver            GMRES;
+    GMRES
+    {
+        preconditioner    LUSGS;
+        maxIter           10;
+        nDirections           8;
+        relTol      1e-3;
+        tolerance       1e-12;
+    }
+}
+
+relaxationFactors
+{
+    // Note: under-relaxation factors used in wave-transmissive schemes
+    k               0.5;
+    omega           0.5;
+}
+
+fieldBounds
+{
+    // With bounding
+    p      2e4     6e5;
+    rho    0.3     5.0;
+    h      1e4     2e6;
+    e      1e5     5e5;
+    rhoE   5e4     1e6;
+    T      10     1000;
+    U      1000;
+}
+
+
+pseudoTime
+{
+    nPseudoCorr  1;
+    pseudoTol         1e-10;
+    pseudoTolRel       1e-10;
+
+    pseudoCoNum         10;
+    pseudoCoNumMax      50;
+
+    localTimestepping true;
+}
+
+
+// ************************************************************************* //

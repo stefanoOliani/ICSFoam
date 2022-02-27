@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open Source CFD        |
+|  \\    /   O peration     | Version:  1.6-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers {}
+
+flowSolver
+{
+    solver            GMRES;
+    GMRES
+    {
+        preconditioner    LUSGS;
+        maxIter           10;
+        nDirections           5;
+        tolerance         1e-10;
+        relTol      1e-2;
+    }
+}
+
+pseudoTime
+{
+    nPseudoCorr       100;
+    pseudoTol         1e-10;
+    pseudoTolRel      1e-10;
+    pseudoCoMin	      200;	
+    pseudoCoNum       200;
+    pseudoCoNumMax    200;
+}
+
+// ************************************************************************* //
