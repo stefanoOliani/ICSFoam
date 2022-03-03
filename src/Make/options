@@ -4,6 +4,8 @@ EXE_INC = \
     -I../meshTools/lnInclude \
     -I../OpenFOAM/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
+    -I$(LIB_SRC)/fileFormats/lnInclude \
+    -I$(LIB_SRC)/surfMesh/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
     -I$(LIB_SRC)/thermophysicalModels/specie/lnInclude \
     -I$(LIB_SRC)/transportModels/compressible/lnInclude \
@@ -15,6 +17,8 @@ EXE_INC = \
 LIB_LIBS = \
     -lOpenFOAM \
     -lfiniteVolume \
+    -lfileFormats \
+    -lsurfMesh \
     -lmeshTools \
     -lturbulenceModels \
     -lcompressibleTurbulenceModels \

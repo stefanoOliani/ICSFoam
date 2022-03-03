@@ -1,3 +1,6 @@
+meshes/polyMesh/polyPatches/constraint/phaseLagCyclic/phaseLagCyclicPolyPatch.C
+meshes/pointMesh/pointPatches/constraint/phaseLagCyclic/phaseLagCyclicPointPatch.C
+
 boundaryConditions/characteristic/characteristicBase.C
 boundaryConditions/characteristic/characteristicFarfield/characteristicFarfieldVelocityFvPatchVectorField.C
 boundaryConditions/characteristic/characteristicFarfield/characteristicFarfieldPressureFvPatchScalarField.C
@@ -18,6 +21,26 @@ cfdTools/MRFTranslating/IOMRFTranslatingZoneList.C
 cfdTools/HB/HBZone.C
 cfdTools/HB/HBZoneList.C
 cfdTools/HB/IOHBZoneList.C
+
+AMIInterpolation/GAMG/interfaceFields/phaseLagAMIGAMGInterfaceField/phaseLagAMIGAMGInterfaceField.C
+AMIInterpolation/GAMG/interfaces/phaseLagAMIGAMGInterface/phaseLagAMIGAMGInterface.C
+
+AMIInterpolation/patches/phaseLagAMI/phaseLagAMILduInterfaceField/phaseLagAMILduInterface.C
+AMIInterpolation/patches/phaseLagAMI/phaseLagAMILduInterfaceField/phaseLagAMILduInterfaceField.C
+AMIInterpolation/patches/phaseLagAMI/phaseLagAMIPointPatch/phaseLagAMIPointPatch.C
+AMIInterpolation/patches/phaseLagAMI/phaseLagAMIPointPatchField/phaseLagAMIPointPatchFields.C
+AMIInterpolation/patches/phaseLagAMI/phaseLagAMIPolyPatch/phaseLagAMIPolyPatch.C
+AMIInterpolation/patches/phaseLagAMI/phaseLagAMIPolyPatch/phaseLagAMIPolyPatchInterpolateScalar.C
+
+AMIInterpolation/GAMG/interfaceFields/overlapAMIGAMGInterfaceField/overlapAMIGAMGInterfaceField.C
+AMIInterpolation/GAMG/interfaces/overlapAMIGAMGInterface/overlapAMIGAMGInterface.C
+
+AMIInterpolation/patches/overlapAMI/overlapAMILduInterfaceField/overlapAMILduInterface.C
+AMIInterpolation/patches/overlapAMI/overlapAMILduInterfaceField/overlapAMILduInterfaceField.C
+AMIInterpolation/patches/overlapAMI/overlapAMIPointPatch/overlapAMIPointPatch.C
+AMIInterpolation/patches/overlapAMI/overlapAMIPointPatchField/overlapAMIPointPatchFields.C
+AMIInterpolation/patches/overlapAMI/overlapAMIPolyPatch/overlapAMIPolyPatch.C
+AMIInterpolation/patches/overlapAMI/overlapAMIPolyPatch/overlapAMIPolyPatchInterpolateScalar.C
 
 dualTimeDdtScheme/dualTimeDdtSchemes.C
 
@@ -62,4 +85,4 @@ fields/fvsPatchFields/constraint/phaseLagCyclic/phaseLagCyclicFvsPatchFields.C
 fields/fvPatchFields/constraint/overlapAMI/overlapAMIFvPatchFields.C
 fields/fvsPatchFields/constraint/overlapAMI/overlapAMIFvsPatchFields.C
 
-LIB = $(FOAM_USER_LIBBIN)/libICSFiniteVolume
+LIB = $(FOAM_USER_LIBBIN)/libICSFoam

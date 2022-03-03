@@ -1,5 +1,0 @@
-meshes/polyMesh/polyPatches/constraint/phaseLagCyclic/phaseLagCyclicPolyPatch.C
-meshes/pointMesh/pointPatches/constraint/phaseLagCyclic/phaseLagCyclicPointPatch.C
-
-
-LIB = $(FOAM_USER_LIBBIN)/libICSOpenFoam

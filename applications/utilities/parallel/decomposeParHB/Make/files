@@ -5,4 +5,4 @@ domainDecompositionDistribute.C
 dimFieldDecomposer.C
 pointFieldDecomposer.C
 
-EXE = $(FOAM_APPBIN)/decomposeParHB
+EXE = $(FOAM_USER_APPBIN)/decomposeParHB
