@@ -18,4 +18,4 @@ EXE_LIBS = \
     -L$(FOAM_LIBBIN)/dummy \
     -lkahipDecomp -lmetisDecomp -lscotchDecomp \
     -L$(FOAM_USER_LIBBIN) \
-    -lICSFoam \
+    -lICSFoam 
