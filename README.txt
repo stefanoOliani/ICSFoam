@@ -14,6 +14,9 @@ wmake libso /home/stefano/OpenFOAM/OpenFOAM-v2006/src/finiteVolume/
 
 Finally, to compile the code, you need to run the Allwmake file in the repository main folder.
 
+After that, it is strongly recommended to recompile Openfoam src and utilities to update dependecies (Allwmake inside the main OpenFoam directory).
+For example, to decompose and reconstruct cases you need to recompile decomposePar and reconstructPar utilities.
+
 
 Many thanks to Dr. Nicola Casari and Dr. Mauro Carnevale for their help during the code implementation and test phases!
 
