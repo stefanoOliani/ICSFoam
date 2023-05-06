@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -24,10 +24,8 @@ License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
+
 
 #include "blockFvScalarScalarMatrix.H"
 #include "fvScalarMatrix.H"
@@ -51,40 +49,40 @@ void Foam::blockFvMatrix<Foam::scalar,Foam::scalar>::insertEquation
     // Get reference to this source field of block system
     scalarField& b = this->source();
 
-    scalarField& blockDiag = this->diag();
+	scalarField& blockDiag = this->diag();
 
     addBoundaryDiag(matrix,diag,0);
 
-    forAll (diag, cellI)
-    {
-    	blockDiag[cellI] = diag[cellI];
-    	b[cellI] += source[cellI];
-    }
-    
-    // Reset diagonal
-    diag = saveDiag;
+	forAll (diag, cellI)
+	{
+		blockDiag[cellI] = diag[cellI];
+		b[cellI] += source[cellI];
+	}
+
+	// Reset diagonal
+	diag = saveDiag;
 
     if (matrix.hasUpper())
     {
         const scalarField& upper = matrix.upper();
-	scalarField& blockUpper = this->upper();
+		scalarField& blockUpper = this->upper();
 
-	forAll (upper, faceI)
-	{
-		blockUpper[faceI] = upper[faceI];
-	}
+		forAll (upper, faceI)
+		{
+			blockUpper[faceI] = upper[faceI];
+		}
     }
 
     if (matrix.hasLower())
     {
         const scalarField& lower = matrix.lower();
 
-	scalarField& blockLower = this->lower();
+		scalarField& blockLower = this->lower();
 
-	forAll (lower, faceI)
-	{
-		blockLower[faceI] = lower[faceI];
-	}
+		forAll (lower, faceI)
+		{
+			blockLower[faceI] = lower[faceI];
+		}
     }
 
     const volScalarField& psi = matrix.psi();
@@ -94,14 +92,41 @@ void Foam::blockFvMatrix<Foam::scalar,Foam::scalar>::insertEquation
     this->interfacesUpper().resize(mesh.boundary().size());
     this->interfacesLower().resize(mesh.boundary().size());
 
-    forAll (psi.boundaryField(), patchI)
-    {
-	const scalarField& icp = matrix.internalCoeffs()[patchI];
-	const scalarField& bcp = matrix.boundaryCoeffs()[patchI];
+
+//    forAll (psi.boundaryField(), patchI)
+//    {
+//        const fvPatchField<scalar>& pf = psi.boundaryField()[patchI];
+//        const fvPatch& patch = pf.patch();
+//
+//        if (patch.coupled())
+//        {
+//            Info<<"check1 "<<endl;
+//            const scalarField& icp = matrix.internalCoeffs()[patchI];
+//            const scalarField& bcp = matrix.boundaryCoeffs()[patchI];
+//
+//            Info<<"check2 "<<endl;
+//
+//			scalarField& pcoupleUpper = this->interfacesUpper()[patchI];
+//			scalarField& pcoupleLower = this->interfacesLower()[patchI];
+//
+//			forAll (pf, faceI)
+//			{
+//				pcoupleUpper[faceI] = bcp[faceI];
+//				pcoupleLower[faceI] = icp[faceI];
+//			}
+//        }
+//    }
+
+	forAll (psi.boundaryField(), patchI)
+	{
+		const scalarField& icp = matrix.internalCoeffs()[patchI];
+		const scalarField& bcp = matrix.boundaryCoeffs()[patchI];
 
         this->interfacesUpper().set(patchI, new scalarField(-bcp));
         this->interfacesLower().set(patchI, new scalarField(icp));
-    }
+	}
+
+
 }
 
 // ************************************************************************* //

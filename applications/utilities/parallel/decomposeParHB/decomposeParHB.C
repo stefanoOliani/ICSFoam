@@ -1,32 +1,141 @@
 /*---------------------------------------------------------------------------*\
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
+    Copyright (C) 2011-2017 OpenFOAM Foundation
+    Copyright (C) 2016-2020 OpenCFD Ltd
+    Copyright (C) 2022 Stefano Oliani
 
 -------------------------------------------------------------------------------
 License
-    This file is part of ICSFOAM.
+    This file is part of ICSFoam.
 
-    ICSFOAM is free software: you can redistribute it and/or modify it
+    ICSFoam is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    ICSFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ICSFoam is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with ICSFoam.  If not, see <http://www.gnu.org/licenses/>.
 
+Application
+    decomposeParHB
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Group
+    grpParallelUtilities
+
+Description
+    Automatically decomposes a mesh and fields of a case for parallel
+    execution of OpenFOAM.
+
+Usage
+    \b decomposeParHB [OPTIONS]
+
+    Options:
+      - \par -allRegions
+        Decompose all regions in regionProperties. Does not check for
+        existence of processor*.
+
+      - \par -case \<dir\>
+        Specify case directory to use (instead of the cwd).
+
+      - \par -cellDist
+        Write the cell distribution as a labelList, for use with 'manual'
+        decomposition method and as a volScalarField for visualization.
+
+      - \par -constant
+        Include the 'constant/' dir in the times list.
+
+      - \par -copyUniform
+        Copy any \a uniform directories too.
+
+      - \par -copyZero
+        Copy \a 0 directory to processor* rather than decompose the fields.
+
+      - \par -debug-switch \<name=val\>
+        Specify the value of a registered debug switch. Default is 1
+        if the value is omitted. (Can be used multiple times)
+
+      - \par -decomposeParHBDict \<file\>
+        Use specified file for decomposeParHB dictionary.
+
+      - \par -dry-run
+        Test without writing the decomposition. Changes -cellDist to
+        only write volScalarField.
+
+      - \par -fields
+        Use existing geometry decomposition and convert fields only.
+
+      - \par fileHandler \<handler\>
+        Override the file handler type.
+
+      - \par -force
+        Remove any existing \a processor subdirectories before decomposing the
+        geometry.
+
+      - \par -ifRequired
+        Only decompose the geometry if the number of domains has changed from a
+        previous decomposition. No \a processor subdirectories will be removed
+        unless the \a -force option is also specified. This option can be used
+        to avoid redundant geometry decomposition (eg, in scripts), but should
+        be used with caution when the underlying (serial) geometry or the
+        decomposition method etc. have been changed between decompositions.
+
+      - \par -info-switch \<name=val\>
+        Specify the value of a registered info switch. Default is 1
+        if the value is omitted. (Can be used multiple times)
+
+      - \par -latestTime
+        Select the latest time.
+
+      - \par -lib \<name\>
+        Additional library or library list to load (can be used multiple times).
+
+      - \par -noFunctionObjects
+        Do not execute function objects.
+
+      - \par -noSets
+        Skip decomposing cellSets, faceSets, pointSets.
+
+      - \par -noZero
+        Exclude the \a 0 dir from the times list.
+
+      - \par -opt-switch \<name=val\>
+        Specify the value of a registered optimisation switch (int/bool).
+        Default is 1 if the value is omitted. (Can be used multiple times)
+
+      - \par -region \<regionName\>
+        Decompose named region. Does not check for existence of processor*.
+
+      - \par -time \<ranges\>
+        Override controlDict settings and decompose selected times. Does not
+        re-decompose the mesh i.e. does not handle moving mesh or changing
+        mesh cases. Eg, ':10,20 40:70 1000:', 'none', etc.
+
+      - \par -verbose
+        Additional verbosity.
+
+      - \par -doc
+        Display documentation in browser.
+
+      - \par -doc-source
+        Display source code in browser.
+
+      - \par -help
+        Display short help and exit.
+
+      - \par -help-man
+        Display full help (manpage format) and exit.
+
+      - \par -help-notes
+        Display help notes (description) and exit.
+
+      - \par -help-full
+        Display full help and exit.
+
 \*---------------------------------------------------------------------------*/
 
 #include "OSspecific.H"
@@ -509,6 +618,9 @@ int main(int argc, char *argv[])
     		cp("tmpSys",runTime.system()/"subTimeLevel" + Foam::name(subLeveli));
         }
 
+        fileName thermo = runTime.constant()/"thermophysicalProperties";
+		fileName turbulence = runTime.constant()/"turbulenceProperties";
+
     	for (label proci = 0; proci < mesh.nProcs(); ++proci)
     	{
     		cp(cwd()/"processor" + Foam::name(proci)/"constant", cwd()/"processor" + Foam::name(proci)/"tmpCnst");
@@ -521,6 +633,9 @@ int main(int argc, char *argv[])
     					cwd()/"processor" + Foam::name(proci)/"constant"/"subTimeLevel" + Foam::name(subLeveli);
 
     			cp(procCnstDir,procSubTimeDir);
+
+    			cp(thermo, procSubTimeDir);
+    			cp(turbulence, procSubTimeDir);
     		}
 
     		rmDir(procCnstDir);

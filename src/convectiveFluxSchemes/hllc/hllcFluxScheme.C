@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,15 +23,12 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "hllcFluxScheme.H"
 
 #include "addToRunTimeSelectionTable.H"
+#include "MUSCLInterpolation.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -91,7 +88,7 @@ void Foam::hllcFluxScheme::calcFlux
     tmp< surfaceScalarField > p_l = fvc::interpolate(p(), pos_, "reconstruct(rho)");
     tmp< surfaceScalarField > p_r = fvc::interpolate(p(), neg_, "reconstruct(rho)");
 
-    surfaceVectorField U_l (IOobject("U_l", mesh().time().timeName(), mesh()), mesh(), dimensionedVector("zero", U().dimensions(), vector::zero));
+	surfaceVectorField U_l (IOobject("U_l", mesh().time().timeName(), mesh()), mesh(), dimensionedVector("zero", U().dimensions(), vector::zero));
     surfaceVectorField U_r (IOobject("U_r", mesh().time().timeName(), mesh()), mesh(), dimensionedVector("zero", U().dimensions(), vector::zero));
     U_l.replace(0, fvc::interpolate(U().component(0), pos_, "reconstruct(U)"));
     U_l.replace(1, fvc::interpolate(U().component(1), pos_, "reconstruct(U)"));
@@ -107,6 +104,7 @@ void Foam::hllcFluxScheme::calcFlux
     tmp< volScalarField > c = max(sqrt(gamma()/psi()),c0);
     tmp< surfaceScalarField > c_l = fvc::interpolate(c(), pos_, "reconstruct(T)");
     tmp< surfaceScalarField > c_r = fvc::interpolate(c(), neg_, "reconstruct(T)");
+
     c.clear();
     psi.clear();
 
@@ -114,9 +112,6 @@ void Foam::hllcFluxScheme::calcFlux
     tmp< volScalarField > E = thermo().he(p(), T)+0.5*magSqr(U());
     tmp< surfaceScalarField > E_l (fvc::interpolate(E(), pos_, "reconstruct(T)"));
     tmp< surfaceScalarField > E_r (fvc::interpolate(E(), neg_, "reconstruct(T)"));
-
-    // NOTE: Literature suggest enthalpy should be interpolated seperately and
-    // not be assembled using left and right states of energy and pressure
 
     tmp< volScalarField > H
         (
@@ -127,6 +122,7 @@ void Foam::hllcFluxScheme::calcFlux
 
     tmp<surfaceScalarField > H_l (fvc::interpolate(H(), pos_, "reconstruct(T)"));
     tmp<surfaceScalarField > H_r (fvc::interpolate(H(), neg_, "reconstruct(T)"));
+
     E.clear();
     H.clear();
 
@@ -156,6 +152,7 @@ void Foam::hllcFluxScheme::calcFlux
 
         uMag_l.ref() -= meshVelocity;
         uMag_r.ref() -= meshVelocity;
+
     }
 
     MRFFaceVelocity().setOriented(false);
@@ -240,6 +237,7 @@ void Foam::hllcFluxScheme::calcFlux
              coefSmr()*fluxRhoEStar_r() +
              coefSr() *rho_r()*H_r()*uMag_r()
             )*mesh().magSf();
+
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

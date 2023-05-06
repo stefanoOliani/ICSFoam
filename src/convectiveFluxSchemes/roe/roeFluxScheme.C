@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,14 +20,11 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "addToRunTimeSelectionTable.H"
 #include "roeFluxScheme.H"
+#include "MUSCLInterpolation.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -312,12 +306,10 @@ void Foam::roeFluxScheme::calcFlux
     tmp< volScalarField > gamma = thermo().gamma();
 
     const volScalarField& T(thermo().T());
-    tmp< volScalarField > E = thermo().he(p(), T)+0.5*magSqr(U());
+    tmp< volScalarField > E = thermo().he(p(), T) + 0.5*magSqr(U());
+
     tmp< surfaceScalarField > E_l (fvc::interpolate(E(), pos_, "reconstruct(T)"));
     tmp< surfaceScalarField > E_r (fvc::interpolate(E(), neg_, "reconstruct(T)"));
-
-    // NOTE: Literature suggest enthalpy should be interpolated separately and
-    // not be assembled using left and right states of energy and pressure
 
     tmp< volScalarField > H
     (
@@ -416,36 +408,6 @@ void Foam::roeFluxScheme::calcFlux
 	phiUp -= 0.5*mesh().magSf()*MRFFaceVelocity()*(rhoU_l + rhoU_r);
 	phiEp -= 0.5*mesh().magSf()*MRFFaceVelocity()*(rhoE_l + rhoE_r);
 }
-
-//void Foam::roeFluxScheme::addDissipationJacobian
-//(
-//	coupledMatrix& cMatrix
-//) const
-//{
-//    blockFvMatrix<scalar, scalar>& dContByRho = cMatrix.dSByS(0,0);
-//    blockFvMatrix<scalar, vector>& dContByRhoU = cMatrix.dSByV(0,0);
-//    blockFvMatrix<scalar, scalar>& dContByRhoE = cMatrix.dSByS(0,1);
-//
-//    blockFvMatrix<vector, vector>& dMomByRho = cMatrix.dVByS(0,0);
-//    blockFvMatrix<vector, tensor>& dMomByRhoU = cMatrix.dVByV(0,0);
-//    blockFvMatrix<vector, vector>& dMomByRhoE = cMatrix.dVByS(0,1);
-//
-//    blockFvMatrix<scalar, scalar>& dEnergyByRho = cMatrix.dSByS(1,0);
-//    blockFvMatrix<scalar, vector>& dEnergyByRhoU = cMatrix.dSByV(1,0);
-//    blockFvMatrix<scalar, scalar>& dEnergyByRhoE = cMatrix.dSByS(1,1);
-//
-//    dContByRho.insertDissipationBlock(dissContByRho_());
-//    dContByRhoU.insertDissipationBlock(dissContByRhoU_());
-//    dContByRhoE.insertDissipationBlock(dissContByRhoE_());
-//
-//    dMomByRho.insertDissipationBlock(dissMomByRho_());
-//    dMomByRhoU.insertDissipationBlock(dissMomByRhoU_());
-//    dMomByRhoE.insertDissipationBlock(dissMomByRhoE_());
-//
-//    dEnergyByRho.insertDissipationBlock(dissEnergyByRho_());
-//    dEnergyByRhoU.insertDissipationBlock(dissEnergyByRhoU_());
-//    dEnergyByRhoE.insertDissipationBlock(dissEnergyByRhoE_());
-//}
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

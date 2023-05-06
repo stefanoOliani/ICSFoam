@@ -89,7 +89,7 @@ forAll(subTimeMeshes,K)
 
 	// Roe averages
 	dimensionedScalar rho0("rho0",dimDensity,VSMALL);
-	tmp< surfaceScalarField > coefR = sqrt(max(rho0,rho_r())/max(rho0,rho_l()));  
+	tmp< surfaceScalarField > coefR = sqrt(max(rho0,rho_r())/max(rho0,rho_l()));  // CHECK: Is this form of coefR correct?
 
 	surfaceVectorField RoeVelocity = (coefR()*U_r + U_l)/(coefR() + 1.0);
 	surfaceScalarField  uProjRoe = RoeVelocity & n;
@@ -187,6 +187,14 @@ forAll(subTimeMeshes,K)
 
     // Pseudo and real-time contribution
     tmp<fvScalarMatrix> ddtRhoS = fvm::ddt(rhoS_);
+
+    if (mesh.foundObject<volScalarField>("ddt0(rhoS)"))
+    {
+        const_cast<volScalarField&>
+        (
+            mesh.lookupObject<volScalarField>("ddt0(rhoS)")
+        ).timeIndex() = mesh.time().timeIndex();
+    }
 
     scalarTranspEqSystemBlock.dSByS(0,0).source() = rhoSR.primitiveField()*mesh.V() + scalarTranspSource[K];
 
@@ -323,6 +331,7 @@ forAll(subTimeMeshes,K)
 	}
 
     // Add temporal terms
+    // Temporal contribution (Weak form)
 	scalarField ddtCoeff(mesh.V().size());
 
 	// Set based on latest rPseudoDeltaT

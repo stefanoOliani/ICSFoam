@@ -1,11 +1,12 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Hrvoje Jasak, Wikki Ltd.  All rights reserved
+    Fethi Tekin, All rights reserved.
+    Oliver Borm, All rights reserved.
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +24,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "overlapAMIPolyPatch.H"
@@ -128,11 +125,11 @@ void Foam::overlapAMIPolyPatch::resetAMI() const
         const pointField& thisPoints0 = localPoints();
         const pointField& nbrPoints0 = neighbPatch().localPoints();
 
-	pointField expandedPointsSrc(nCopies()*thisPoints0.size());
-	faceList expandedFacesListSrc(nCopies()*localFaces().size());
+		expandedPoints_.resize(nCopies()*thisPoints0.size());
+		expandedFaces_.resize(nCopies()*localFaces().size());
 
-	pointField expandedPointsTgt(neighbPatch().nCopies()*nbrPoints0.size());
-	faceList expandedFacesListTgt(neighbPatch().nCopies()*neighbPatch().localFaces().size());
+		neighbPatch().expandedPoints_.resize(neighbPatch().nCopies()*nbrPoints0.size());
+		neighbPatch().expandedFaces_.resize(neighbPatch().nCopies()*neighbPatch().localFaces().size());
 
         autoPtr<OBJstream> ownStr;
         autoPtr<OBJstream> neiStr;
@@ -159,76 +156,76 @@ void Foam::overlapAMIPolyPatch::resetAMI() const
         label nPointsGeomThis = 0;
         label nFacesGeomThis = 0;
 
-	for (label i = 0; i < nCopies(); ++ i)
-	{
-		faceList geomLocalFacesSrc(localFaces());
-
-		// Calculate transform
-		const tensor curRotation = RodriguesRotation(rotationAxis_,  i*myAngleThis);
-
-		forAll (thisPoints0, pointI)
+		for (label i = 0; i < nCopies(); ++ i)
 		{
-			expandedPointsSrc[nPointsGeomThis] = Foam::transform(curRotation, thisPoints0[pointI]);
-			nPointsGeomThis++;
-		}
+			faceList geomLocalFacesSrc(localFaces());
 
-		const label copyOffsetGeomSrc = i*thisPoints0.size();
+			// Calculate transform
+			const tensor curRotation = RodriguesRotation(rotationAxis_,  i*myAngleThis);
 
-		forAll (geomLocalFacesSrc, faceI)
-		{
-			const face& curGeomFace = geomLocalFacesSrc[faceI];
-
-			face& curExpandedFace = expandedFacesListSrc[nFacesGeomThis];
-
-			// Copy face with offsets
-			curExpandedFace.setSize(curGeomFace.size());
-
-			forAll (curGeomFace, fpI)
+			forAll (thisPoints0, pointI)
 			{
-				curExpandedFace[fpI] = curGeomFace[fpI] + copyOffsetGeomSrc;
+				expandedPoints_[nPointsGeomThis] = Foam::transform(curRotation, thisPoints0[pointI]);
+				nPointsGeomThis++;
 			}
 
-			nFacesGeomThis++;
-		}
-	}
+			const label copyOffsetGeomSrc = i*thisPoints0.size();
 
-	//SRC step
-
-	label nPointsGeomNbr = 0;
-	label nFacesGeomNbr = 0;
-
-	for (label i = 0; i < neighbPatch().nCopies(); ++ i)
-	{
-		faceList geomLocalFacesTgt(neighbPatch().localFaces());
-
-		// Calculate transform
-		const tensor curRotation = RodriguesRotation(rotationAxis_,  i*myAngleNbr);
-
-		forAll (nbrPoints0, pointI)
-		{
-			expandedPointsTgt[nPointsGeomNbr] = Foam::transform(curRotation, nbrPoints0[pointI]);
-			nPointsGeomNbr++;
-		}
-
-		const label copyOffsetGeomNbr = i*nbrPoints0.size();
-
-		forAll (geomLocalFacesTgt, faceI)
-		{
-			const face& curGeomFace = geomLocalFacesTgt[faceI];
-
-			face& curExpandedFace = expandedFacesListTgt[nFacesGeomNbr];
-
-			// Copy face with offsets
-			curExpandedFace.setSize(curGeomFace.size());
-
-			forAll (curGeomFace, fpI)
+			forAll (geomLocalFacesSrc, faceI)
 			{
-				curExpandedFace[fpI] = curGeomFace[fpI] + copyOffsetGeomNbr;
+				const face& curGeomFace = geomLocalFacesSrc[faceI];
+
+				face& curExpandedFace = expandedFaces_[nFacesGeomThis];
+
+				// Copy face with offsets
+				curExpandedFace.setSize(curGeomFace.size());
+
+				forAll (curGeomFace, fpI)
+				{
+					curExpandedFace[fpI] = curGeomFace[fpI] + copyOffsetGeomSrc;
+				}
+
+				nFacesGeomThis++;
+			}
+		}
+
+		//SRC step
+
+		label nPointsGeomNbr = 0;
+		label nFacesGeomNbr = 0;
+
+		for (label i = 0; i < neighbPatch().nCopies(); ++ i)
+		{
+			faceList geomLocalFacesTgt(neighbPatch().localFaces());
+
+			// Calculate transform
+			const tensor curRotation = RodriguesRotation(rotationAxis_,  i*myAngleNbr);
+
+			forAll (nbrPoints0, pointI)
+			{
+				neighbPatch().expandedPoints_[nPointsGeomNbr] = Foam::transform(curRotation, nbrPoints0[pointI]);
+				nPointsGeomNbr++;
 			}
 
-			nFacesGeomNbr++;
+			const label copyOffsetGeomNbr = i*nbrPoints0.size();
+
+			forAll (geomLocalFacesTgt, faceI)
+			{
+				const face& curGeomFace = geomLocalFacesTgt[faceI];
+
+				face& curExpandedFace = neighbPatch().expandedFaces_[nFacesGeomNbr];
+
+				// Copy face with offsets
+				curExpandedFace.setSize(curGeomFace.size());
+
+				forAll (curGeomFace, fpI)
+				{
+					curExpandedFace[fpI] = curGeomFace[fpI] + copyOffsetGeomNbr;
+				}
+
+				nFacesGeomNbr++;
+			}
 		}
-	}
 
         // Close debug streams
         if (ownStr.valid())
@@ -240,28 +237,28 @@ void Foam::overlapAMIPolyPatch::resetAMI() const
             neiStr.clear();
         }
 
-	SubList<face> expandedFacesSrc(expandedFacesListSrc);
-	expandedPatchPtr_.set(new primitivePatch(expandedFacesSrc, expandedPointsSrc));
+		SubList<face> expandedFacesSrc(expandedFaces_);
+		expandedPatchPtr_.set(new primitivePatch(expandedFacesSrc, expandedPoints_));
 
-	SubList<face> expandedFacesTrg(expandedFacesListTgt);
-	neighbPatch().expandedPatchPtr_.set(new primitivePatch(expandedFacesTrg, expandedPointsTgt));
+		SubList<face> expandedFacesTrg(neighbPatch().expandedFaces_);
+		neighbPatch().expandedPatchPtr_.set(new primitivePatch(expandedFacesTrg, neighbPatch().expandedPoints_));
 
-	if (debug > 1)
-	{
-		Info << "Writing expanded geom patch as VTK" << endl;
+		if (debug > 1)
+		{
+			Info << "Writing expanded geom patch as VTK" << endl;
 
-		const Time& t = boundaryMesh().mesh().time();
-		OFstream osSrc(t.path()/name() + "_extendedPatch.obj");
-		OFstream osTrg(t.path()/neighbPatch().name() + "_extendedPatch.obj");
-		meshTools::writeOBJ(osSrc, expandedFacesSrc, expandedPointsSrc);
-		meshTools::writeOBJ(osTrg, expandedFacesTrg, expandedPointsTgt);
-	}
+			const Time& t = boundaryMesh().mesh().time();
+			OFstream osSrc(t.path()/name() + "_extendedPatch.obj");
+			OFstream osTrg(t.path()/neighbPatch().name() + "_extendedPatch.obj");
+			meshTools::writeOBJ(osSrc, expandedFacesSrc, expandedPoints_);
+			meshTools::writeOBJ(osTrg, expandedFacesTrg, neighbPatch().expandedPoints_);
+		}
 
-        AMIPtr_->setRequireMatch(true);
+	    AMIPtr_->setRequireMatch(true);
 
-       // Construct/apply AMI interpolation to determine addressing and weights
-       AMIPtr_->upToDate() = false;
-        AMIPtr_->calculate(expandedPatchPtr_(), neighbPatch().expandedPatchPtr_());
+	    // Construct/apply AMI interpolation to determine addressing and weights
+	    AMIPtr_->upToDate() = false;
+	    AMIPtr_->calculate(expandedPatchPtr_(), neighbPatch().expandedPatchPtr_());
 
 
         // Print some statistics
@@ -336,6 +333,10 @@ void Foam::overlapAMIPolyPatch::initMovePoints
     // See below. Clear out any local geometry
     primitivePatch::movePoints(p);
 
+    // Note: processorPolyPatch::initMovePoints calls
+    // processorPolyPatch::initGeometry which will trigger calculation of
+    // patch faceCentres() and cell volumes...
+
     AMIPtr_->upToDate() = false;
 
     // Early calculation of transforms. See above.
@@ -350,6 +351,20 @@ void Foam::overlapAMIPolyPatch::movePoints
 )
 {
     DebugInFunction << endl;
+
+//    Note: not calling movePoints since this will undo our manipulations!
+//    polyPatch::movePoints(pBufs, p);
+/*
+    polyPatch::movePoints
+     -> primitivePatch::movePoints
+        -> primitivePatch::clearGeom:
+    deleteDemandDrivenData(localPointsPtr_);
+    deleteDemandDrivenData(faceCentresPtr_);
+    deleteDemandDrivenData(faceAreasPtr_);
+    deleteDemandDrivenData(magFaceAreasPtr_);
+    deleteDemandDrivenData(faceNormalsPtr_);
+    deleteDemandDrivenData(pointNormalsPtr_);
+*/
 }
 
 
@@ -395,7 +410,9 @@ Foam::overlapAMIPolyPatch::overlapAMIPolyPatch
     coupledPolyPatch(name, size, start, index, bm, patchType, transform),
     rotationAxis_(Zero),
     nCopies_(0),
-    expandedPatchPtr_(nullptr),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(size),
+	expandedPoints_(size),
     nbrPatchName_(word::null),
     nbrPatchID_(-1),
     AMIPtr_(AMIInterpolation::New(defaultAMIMethod)),
@@ -418,9 +435,11 @@ Foam::overlapAMIPolyPatch::overlapAMIPolyPatch
 )
 :
     coupledPolyPatch(name, dict, index, bm, patchType),
-    rotationAxis_(dict.get<vector>("rotationAxis")),
-    nCopies_(dict.get<label>("nCopies")),
-    expandedPatchPtr_(nullptr),
+	rotationAxis_(dict.get<vector>("rotationAxis")),
+	nCopies_(dict.get<label>("nCopies")),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(nCopies_*localFaces().size()),
+	expandedPoints_(nCopies_*localPoints().size()),
     nbrPatchName_(dict.getOrDefault<word>("neighbourPatch", word::null)),
     coupleGroup_(dict),
     nbrPatchID_(-1),
@@ -463,9 +482,11 @@ Foam::overlapAMIPolyPatch::overlapAMIPolyPatch
 )
 :
     coupledPolyPatch(pp, bm),
-    rotationAxis_(pp.rotationAxis_),
-    nCopies_(pp.nCopies_),
-    expandedPatchPtr_(nullptr),
+	rotationAxis_(pp.rotationAxis_),
+	nCopies_(pp.nCopies_),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(pp.expandedFaces_),
+	expandedPoints_(pp.expandedPoints_),
     nbrPatchName_(pp.nbrPatchName_),
     coupleGroup_(pp.coupleGroup_),
     nbrPatchID_(-1),
@@ -489,9 +510,11 @@ Foam::overlapAMIPolyPatch::overlapAMIPolyPatch
 )
 :
     coupledPolyPatch(pp, bm, index, newSize, newStart),
-    rotationAxis_(pp.rotationAxis_),
-    nCopies_(pp.nCopies_),
-    expandedPatchPtr_(nullptr),
+	rotationAxis_(pp.rotationAxis_),
+	nCopies_(pp.nCopies_),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(pp.expandedFaces_),
+	expandedPoints_(pp.expandedPoints_),
     nbrPatchName_(nbrPatchName),
     coupleGroup_(pp.coupleGroup_),
     nbrPatchID_(-1),
@@ -525,6 +548,8 @@ Foam::overlapAMIPolyPatch::overlapAMIPolyPatch
 	rotationAxis_(pp.rotationAxis_),
 	nCopies_(pp.nCopies_),
 	expandedPatchPtr_(nullptr),
+	expandedFaces_(pp.expandedFaces_),
+	expandedPoints_(pp.expandedPoints_),
     nbrPatchName_(pp.nbrPatchName_),
     coupleGroup_(pp.coupleGroup_),
     nbrPatchID_(-1),
@@ -600,6 +625,17 @@ const Foam::AMIPatchToPatchInterpolation& Foam::overlapAMIPolyPatch::AMI() const
     }
 
     return *AMIPtr_;
+}
+
+
+const Foam::primitivePatch& Foam::overlapAMIPolyPatch::expandedPatch() const
+{
+    if (!expandedPatchPtr_)
+    {
+        resetAMI();
+    }
+
+    return *expandedPatchPtr_;
 }
 
 

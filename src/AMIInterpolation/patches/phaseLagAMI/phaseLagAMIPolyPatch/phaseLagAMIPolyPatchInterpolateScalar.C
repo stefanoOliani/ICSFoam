@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "phaseLagAMIPolyPatch.H"
@@ -121,7 +114,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const scalarField& pf, const word& fieldN
 			if (!(subLeveli.found("U") && subLeveli.found("p") && subLeveli.found("rho")
 					&& subLeveli.found("e") && subLeveli.found("thermophysicalProperties")))
 			{
-				scalarField subTimeInternali = pf;
+				const scalarField subTimeInternali = pf;
 
 				perioFields.set
 				(
@@ -157,7 +150,6 @@ Foam::phaseLagAMIPolyPatch::expandData(const scalarField& pf, const word& fieldN
 				if (fieldName == "(he+(0.5*magSqr(U)))")
 				{
 					scalarField subTimeInternali = ep + (0.5*magSqr(Up));
-
 					perioFields.set
 					(
 						i,
@@ -207,7 +199,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const scalarField& pf, const word& fieldN
 				}
 				else if (fieldName == "gamma")
 				{
-				    scalarField subTimeInternali(gammap);
+					scalarField subTimeInternali = gammap;
 
 					perioFields.set
 					(
@@ -217,7 +209,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const scalarField& pf, const word& fieldN
 				}
 				else if (fieldName == "c")
 				{
-				    scalarField subTimeInternali = sqrt(gammap/psip);
+					scalarField subTimeInternali = sqrt(gammap/psip);
 
 					perioFields.set
 					(

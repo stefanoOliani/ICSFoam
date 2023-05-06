@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,15 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::phaseLagAMIGAMGInterfaceField
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+    GAMG agglomerated cyclic interface field.
+
+SourceFiles
+    phaseLagAMIGAMGInterfaceField.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef phaseLagAMIGAMGInterfaceField_H
@@ -120,6 +122,8 @@ public:
             (
                 solveScalarField& result,
                 const bool add,
+				const lduAddressing& lduAddr,
+				const label patchId,
                 const solveScalarField& psiInternal,
                 const scalarField& coeffs,
                 const direction cmpt,

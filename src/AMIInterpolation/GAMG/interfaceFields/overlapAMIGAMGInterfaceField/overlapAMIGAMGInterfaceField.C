@@ -1,11 +1,12 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Hrvoje Jasak, Wikki Ltd.  All rights reserved
+    Fethi Tekin, All rights reserved.
+    Oliver Borm, All rights reserved.
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +24,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "overlapAMIGAMGInterfaceField.H"
@@ -101,6 +98,8 @@ void Foam::overlapAMIGAMGInterfaceField::updateInterfaceMatrix
 (
     solveScalarField& result,
     const bool add,
+	const lduAddressing& lduAddr,
+	const label patchId,
     const solveScalarField& psiInternal,
     const scalarField& coeffs,
     const direction cmpt,
@@ -108,10 +107,14 @@ void Foam::overlapAMIGAMGInterfaceField::updateInterfaceMatrix
 ) const
 {
     // Get neighbouring field
-    solveScalarField pnf
-    (
-        overlapAMIInterface_.neighbPatch().interfaceInternalField(psiInternal)
-    );
+
+    const labelList& nbrFaceCells =
+        lduAddr.patchAddr
+        (
+            overlapAMIInterface_.neighbPatchID()
+        );
+
+    solveScalarField pnf(psiInternal, nbrFaceCells);
 
     // Transform according to the transformation tensors
     transformCoupleField(pnf, cmpt);
@@ -125,7 +128,9 @@ void Foam::overlapAMIGAMGInterfaceField::updateInterfaceMatrix
         pnf = overlapAMIInterface_.neighbPatch().AMI().interpolateToTarget(pnf);
     }
 
-    this->addToInternalField(result, !add, coeffs, pnf);
+    const labelUList& faceCells = lduAddr.patchAddr(patchId);
+
+    this->addToInternalField(result, !add, faceCells, coeffs, pnf);
 }
 
 

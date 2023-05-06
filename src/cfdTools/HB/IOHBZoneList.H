@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,34 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::IOHBZoneList
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+    List of HB zones with IO functionality.  HB zones are specified by a list
+    of dictionary entries, e.g.
+
+    \verbatim
+    zone1
+    {
+        cellZone    rotor1;
+        active      yes;
+        frequencies 2(3.14 6.28)
+        ...
+    }
+
+    zone2
+    {
+        cellZone    rotor2;
+        active      yes;
+        frequencies 2(1 3.3)
+        ...
+    }
+    \endverbatim
+
+SourceFiles
+    IOHBZoneList.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef IOHBZoneList_H

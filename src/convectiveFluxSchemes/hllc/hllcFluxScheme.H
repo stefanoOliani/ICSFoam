@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -24,9 +24,18 @@ License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Class
+    Foam::hllcFluxScheme
+
+Description
+    HLLC flux splitting scheme. Included support for dynamic mesh and MRF
+
+SourceFiles
+    hllcFluxScheme.C
+
+Authors
+
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef hllcFluxScheme_H
@@ -34,6 +43,7 @@ Author
 
 #include "convectiveFluxScheme.H"
 #include "psiThermo.H"
+#include "MUSCLInterpolate.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

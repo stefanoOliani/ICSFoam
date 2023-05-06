@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +23,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "blockFvMatrix.H"
@@ -59,6 +55,8 @@ void Foam::blockFvMatrix<sourceType, blockType>::initProcessorInterfaces
                 (
                     result,
                     true,
+					this->lduAddr(),
+					interfacei,
                     psiif,
 					interfaceDummyCoeffs,
                     Pstream::defaultCommsType
@@ -85,6 +83,8 @@ void Foam::blockFvMatrix<sourceType, blockType>::initProcessorInterfaces
                 (
                     result,
                     true,
+					this->lduAddr(),
+					interfacei,
                     psiif,
 					interfaceDummyCoeffs,
                     Pstream::commsTypes::blocking
@@ -119,21 +119,6 @@ void Foam::blockFvMatrix<sourceType, blockType>::updateProcessorInterfaces
     }
 
     const processorFvPatch& procPatch = refCast<const processorFvPatch>(procField.patch());
-
-//    if(commsType == Pstream::commsTypes::scheduled)
-//    {
-//    	Info<<"scheduled "<<endl;
-//    }
-//
-//    if(commsType == Pstream::commsTypes::blocking)
-//    {
-//    	Info<<"blocking "<<endl;
-//    }
-//
-//    if(commsType == Pstream::commsTypes::nonBlocking)
-//    {
-//    	Info<<"non blocking "<<endl;
-//    }
 
     if
     (

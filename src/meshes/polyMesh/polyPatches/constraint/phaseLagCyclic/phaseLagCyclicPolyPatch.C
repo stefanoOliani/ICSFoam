@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "addToRunTimeSelectionTable.H"
@@ -42,6 +35,8 @@ Author
 #include "SubField.H"
 #include "unitConversion.H"
 
+#include "IOHBZoneList.H"
+
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
@@ -51,6 +46,9 @@ namespace Foam
     addToRunTimeSelectionTable(polyPatch, phaseLagCyclicPolyPatch, word);
     addToRunTimeSelectionTable(polyPatch, phaseLagCyclicPolyPatch, dictionary);
 }
+
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 
 // * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * * * * * //
@@ -125,6 +123,68 @@ Foam::phaseLagCyclicPolyPatch::~phaseLagCyclicPolyPatch()
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+Foam::scalar Foam::phaseLagCyclicPolyPatch::timeLag() const
+{
+	const objectRegistry& allSubLevels = this->boundaryMesh().mesh().parent();
+  	const objectRegistry& subLevel0 = allSubLevels.lookupObject<objectRegistry>("subTimeLevel0");
+	const HBZoneList& HB = subLevel0.lookupObject<IOHBZoneList>("HBProperties");
+
+	scalar IBPA = 0.0;
+	label HBZoneInstance = -1;
+
+	if (this->owner())
+	{
+		if (IBPA_ > 0)
+		{
+			IBPA = IBPA_;
+		}
+		else
+		{
+			IBPA = 2*constant::mathematical::pi + IBPA_;
+		}
+
+		forAll (HB, i)
+		{
+			if (HB[i].name() == HBZoneName_)
+			{
+				HBZoneInstance = i;
+			}
+		}
+	}
+	else
+	{
+		if (neighbPatch().IBPA() > 0)
+		{
+			IBPA = 2*constant::mathematical::pi - neighbPatch().IBPA();
+		}
+		else
+		{
+			IBPA = -neighbPatch().IBPA();
+		}
+
+
+		forAll (HB, i)
+		{
+			if (HB[i].name() == neighbPatch().HBZoneName())
+			{
+				HBZoneInstance = i;
+			}
+		}
+	}
+
+	if (IBPA < 0)
+	{
+	    FatalErrorInFunction
+	        << "Negative time lag obtained."
+	        << abort(FatalError);
+	}
+
+	const scalar& omega = HB[HBZoneInstance].omegaList()[1];
+
+	return IBPA/omega;
+
+}
 
 
 void Foam::phaseLagCyclicPolyPatch::write(Ostream& os) const

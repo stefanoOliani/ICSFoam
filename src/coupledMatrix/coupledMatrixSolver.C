@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +23,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "error.H"
@@ -52,10 +48,9 @@ autoPtr<coupledMatrix::solver> coupledMatrix::solver::New
 
     dict.lookup("solver") >> solverTypeName;
 
-    typename dictionaryConstructorTable::iterator cstrIter =
-        dictionaryConstructorTablePtr_->find(solverTypeName);
+    auto* ctorPtr = dictionaryConstructorTable(solverTypeName);
 
-    if (cstrIter == dictionaryConstructorTablePtr_->end())
+    if (!ctorPtr)
     {
         FatalErrorInFunction
             << "Unknown solver type " << solverTypeName
@@ -67,7 +62,7 @@ autoPtr<coupledMatrix::solver> coupledMatrix::solver::New
 
     return autoPtr<solver>
            (
-               cstrIter()(dict.subDict(solverTypeName), matrix)
+               ctorPtr(dict.subDict(solverTypeName), matrix)
            );
 }
 
@@ -159,7 +154,6 @@ void Foam::coupledMatrix::solver::normFactors
 
     	vRef[j] = gAverage(vW[j]);
 
-//    	vRefField.set(j, new vectorField(vW[j].size(), vRef[j]));
 
         vRefField.set
         (

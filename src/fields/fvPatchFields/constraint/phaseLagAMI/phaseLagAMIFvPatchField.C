@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "phaseLagAMIFvPatchField.H"
@@ -177,12 +170,6 @@ Foam::phaseLagAMIFvPatchField<Type>::patchNeighbourField() const
     	}
     }
 
-    //Transform should have been already performed during interpolate
-//    if (doTransform())
-//    {
-//        tpnf.ref() = transform(forwardT(), tpnf());
-//    }
-
     return tpnf;
 }
 
@@ -209,6 +196,8 @@ void Foam::phaseLagAMIFvPatchField<Type>::updateInterfaceMatrix
 (
     solveScalarField& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const solveScalarField& psiInternal,
     const scalarField& coeffs,
     const direction cmpt,
@@ -224,15 +213,19 @@ void Foam::phaseLagAMIFvPatchField<Type>::updateInterfaceMatrix
 (
     Field<Type>& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const Field<Type>& psiInternal,
     const scalarField& coeffs,
     const Pstream::commsTypes
 ) const
 {
 
-	Info<<"Should not call it"<<endl;
-    const labelUList& nbrFaceCells =
-        phaseLagAMIPatch_.phaseLagAMIPatch().neighbPatch().faceCells();
+    const labelList& nbrFaceCells =
+                lduAddr.patchAddr
+                (
+                    this->phaseLagAMIPatch().neighbPatchID()
+                );
 
     Field<Type> pnf(psiInternal, nbrFaceCells);
 
@@ -251,8 +244,10 @@ void Foam::phaseLagAMIFvPatchField<Type>::updateInterfaceMatrix
         pnf = phaseLagAMIPatch_.interpolate(pnf, fieldName);
     }
 
+    const labelUList& faceCells = lduAddr.patchAddr(patchId);
+
     // Multiply the field by coefficients and add into the result
-    this->addToInternalField(result, !add, coeffs, pnf);
+    this->addToInternalField(result, !add, faceCells, coeffs, pnf);
 }
 
 

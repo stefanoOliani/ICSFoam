@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "phaseLagAMIFvPatchFields.H"
@@ -49,14 +42,19 @@ void Foam::phaseLagAMIFvPatchField<scalar>::updateInterfaceMatrix
 (
     solveScalarField& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const solveScalarField& psiInternal,
     const scalarField& coeffs,
     const direction cmpt,
     const Pstream::commsTypes
 ) const
 {
-    const labelUList& nbrFaceCells =
-        this->phaseLagAMIPatch().phaseLagAMIPatch().neighbPatch().faceCells();
+    const labelList& nbrFaceCells =
+            lduAddr.patchAddr
+            (
+                this->phaseLagAMIPatch().neighbPatchID()
+            );
 
     solveScalarField pnf(psiInternal, nbrFaceCells);
 
@@ -98,8 +96,10 @@ void Foam::phaseLagAMIFvPatchField<scalar>::updateInterfaceMatrix
 		}
 	}
 
+	const labelUList& faceCells = lduAddr.patchAddr(patchId);
+
 	// Multiply the field by coefficients and add into the result
-	this->addToInternalField(result, !add, coeffs, pnf);
+	this->addToInternalField(result, !add,faceCells, coeffs, pnf);
 }
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +23,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "convectiveFluxScheme.H"
@@ -34,6 +30,9 @@ Author
 #include "transformFvPatchFields.H"
 #include "blockFvOperators.H"
 #include "addToRunTimeSelectionTable.H"
+
+#include "MUSCLInterpolation.H"
+#include "MUSCLInterpolate.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -148,9 +147,9 @@ convectiveFluxScheme::convectiveFluxScheme
 (
     const word& type,
     const dictionary& dict,
-    const psiThermo& thermo,
-    const volScalarField& rho,
-    const volVectorField& U,
+	const psiThermo& thermo,
+	const volScalarField& rho,
+	const volVectorField& U,
     const volScalarField& p
 )
 :
@@ -422,6 +421,7 @@ void convectiveFluxScheme::addFluxTerms(coupledMatrix& cMatrix) const
 
     blockFvMatrix<scalar, scalar>& dContByRho = cMatrix.dSByS(0,0);
     blockFvMatrix<scalar, vector>& dContByRhoU = cMatrix.dSByV(0,0);
+    cMatrix.dSByS(0,1).diag();
 
     blockFvMatrix<vector, vector>& dMomByRho = cMatrix.dVByS(0,0);
     blockFvMatrix<vector, tensor>& dMomByRhoU = cMatrix.dVByV(0,0);
@@ -498,8 +498,6 @@ void convectiveFluxScheme::addDissipationJacobian(coupledMatrix& cMatrix) const
     tmp<volScalarField> tGamma = thermo_.gamma();
     const volScalarField& gamma = tGamma();
 
-//    const volVectorField& U = mesh_.lookupObject<volVectorField>("U");
-
     // Wave speed: Lax-Friedrich flux approximation of left-hand side Jacobian
     tmp< volScalarField > c = sqrt(gamma/thermo_.psi());
 
@@ -535,6 +533,7 @@ void convectiveFluxScheme::addDissipationJacobian(coupledMatrix& cMatrix) const
 	dMomByRhoU.insertDissipationBlock(lambdaConv *tensor::I);
 
 	dEnergyByRhoE.insertDissipationBlock(lambdaConv);
+
 }
 
 

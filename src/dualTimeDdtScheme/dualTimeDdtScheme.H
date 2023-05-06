@@ -1,10 +1,9 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
 -------------------------------------------------------------------------------
 License
@@ -23,10 +22,35 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::fv::dualTimeDdtScheme
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+    Local time-step first-order Euler implicit/explicit ddt - adds
+    pseudo timestepping to a given base scheme.
+    The reciprocal of the local pseudo time-step field is looked-up from the
+    database with the name provided.
+
+    \frac{W^{n+1} - W^n}{\Delta t} V = R
+    Base diagonal      : V/\Delta t
+    Base source        : phi^n * V/\Deltat
+    \frac{W^{\tau+1} - W^\tau}{\Delta t_\tau} V
+        + \frac{W^{\tau+1} - W^n}{\Delta t} V = R
+    Dual time diagonal : (V/\Delta t_\tau + V/\Delta t)
+    Dual time source   : (V/\Delta t_\tau + V/\Delta t) phi^\tau
+                            - (phi^\tau - phi^n) * V/\Delta t
+
+    See also LocalEulerDdtScheme.
+
+SourceFiles
+    dualTimeDdtScheme.C
+    dualTimeDdtSchemes.C
+
+Authors
+    Oliver Oxtoby
+    Johan Heyns
+        Council for Scientific and Industrial Research, South Africa
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef dualTimeDdtScheme_H

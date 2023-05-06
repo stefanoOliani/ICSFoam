@@ -1,32 +1,25 @@
 /*---------------------------------------------------------------------------*\
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
+    Copyright (C) 2004-2011 OpenCFD Ltd.
+    Copyright (C) 2022 Stefano Oliani
 
 -------------------------------------------------------------------------------
 License
-    This file is part of ICSFOAM.
+    This file is part of ICSFoam.
 
-    ICSFOAM is free software: you can redistribute it and/or modify it
+    ICSFoam is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    ICSFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ICSFoam is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with ICSFoam.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -44,6 +37,9 @@ Author
 #include "viscousFluxScheme.H"
 #include "fvOptions.H"
 
+#include "fixedRhoFvPatchScalarField.H"
+
+#include "MUSCLInterpolation.H"
 #include "emptyFvPatch.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -74,6 +70,8 @@ int main(int argc, char *argv[])
 
         #include "compressibleCourantNo.H"
 
+        // Generate a pretend Courant number so we can
+        // use setInitialDeltaT.H unmodified
         CoNum = maxCo/(maxCo/stabilise(CoNum, SMALL));
 
         #include "setInitialDeltaT.H"
@@ -98,7 +96,7 @@ int main(int argc, char *argv[])
 
             #include "compressibleCourantNo.H"
 
-            CoNum = maxCo/(maxCo/stabilise(CoNum, SMALL));
+        	CoNum = maxCo/(maxCo/stabilise(CoNum, SMALL));
 
             #include "setDeltaT.H"
         }
@@ -107,14 +105,14 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-	#include "beginTimeStep.H"
+		#include "beginTimeStep.H"
 
         // --- Outer corrector loop
         bool notFinished;
 
         while ( (notFinished = solnControl.loop()) )
         {
-	    #include "outerLoop.H"
+			#include "outerLoop.H"
 
             // Correct turbulence
             turbulence->correct();
@@ -129,18 +127,18 @@ int main(int argc, char *argv[])
         }
 
         if (scalarTransport)
-	{
-            int nIterScalarTransp = scalarDict.get<int>("nIterations");
+		{
+        	int nIterScalarTransp = scalarDict.get<int>("nIterations");
 
-            for (int i = 0;  i<nIterScalarTransp ; i++)
+        	for (int i = 0;  i<nIterScalarTransp ; i++)
             {
-		#include "calculateScalarTransport.H"
+				#include "calculateScalarTransport.H"
             }
-	}
+		}
 
         volScalarField rhoRes(fvc::div(phi));
-	scalar L2NormRho = Foam::sqrt(sum(sqr(rhoRes.primitiveField()*mesh.V())));
-	Info<< "rho L2 Residual: "<< Foam::log10(L2NormRho)  << endl;
+		scalar L2NormRho = Foam::sqrt(sum(sqr(rhoRes.primitiveField()*mesh.V())));
+		Info<< "rho L2 Residual: "<< Foam::log10(L2NormRho)  << endl;
 
         if (steadyState && !notFinished)
         {

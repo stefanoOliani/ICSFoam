@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -24,9 +24,6 @@ License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -173,12 +170,6 @@ div
         low[facei] = -sf[facei]*w[facei];
     }
 
-//    forAll(upp, facei)
-//    {
-//        upp[facei] = sf[facei]*0.5;
-//        low[facei] = -sf[facei]*0.5;
-//    }
-
     mx.negSumDiag();
 
     mx.interfacesUpper().resize(mesh.boundary().size());
@@ -188,9 +179,6 @@ div
     {
         mx.interfacesUpper().set(patchi, sf.boundaryField()[patchi]*(1-w.boundaryField()[patchi]));
         mx.interfacesLower().set(patchi, -sf.boundaryField()[patchi]*w.boundaryField()[patchi]);
-
-//        mx.interfacesUpper().set(patchi, sf.boundaryField()[patchi]*0.5);
-//        mx.interfacesLower().set(patchi, -sf.boundaryField()[patchi]*0.5);
 
         // Don't include physical boundaries because those are dealt with separately
         if (mesh.boundary()[patchi].coupled())

@@ -10,6 +10,11 @@ URel=U;
 MRF.makeRelative(URel);
 MRFTrans.makeRelative(URel);
 
+if (mesh.moving())
+{
+	URel -= fvc::reconstruct(fvc::meshPhi(U));
+}
+
 flux.MRFFaceVelocity() = MRF.faceU()() & (mesh.Sf()/mesh.magSf());
 flux.MRFOmega() = MRF.omega()();
 
@@ -54,11 +59,11 @@ coupledMatrix eqSystem(mesh, 2, 1, true); //true = delta form
 
 // Set based on latest rPseudoDeltaT
 ddtCoeff = max(
-		max(fvm::ddt(rho)->diag(),fvm::ddt(rhoU)->diag()),
-		fvm::ddt(rhoE)->diag()
-	      )/mesh.V();
+				max(fvm::ddt(rho)->diag(),fvm::ddt(rhoU)->diag()),
+				fvm::ddt(rhoE)->diag()
+			   )/mesh.V();
 
-PtrList<volScalarField> scalarVarsPrevIter(2);
+	PtrList<volScalarField> scalarVarsPrevIter(2);
 PtrList<volVectorField> vectorVarsPrevIter(1);
 
 forAll(scalarVars, i)

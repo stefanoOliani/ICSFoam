@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,26 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::phaseLagCyclicPolyPatch
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+    Cyclic plane patch.
+
+    Note: morph patch face ordering uses geometric matching so with the
+    following restrictions:
+        -coupled patches should be flat planes.
+        -no rotation in patch plane
+
+    Uses coupledPolyPatch::calcFaceTol to calculate
+    tolerance per face which might need tweaking.
+
+    Switch on 'phaseLagCyclicPolyPatch' debug flag to write .obj files to show
+    the matching.
+
+SourceFiles
+    phaseLagCyclicPolyPatch.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef phaseLagCyclicPolyPatch_H
@@ -156,6 +169,9 @@ public:
         {
             return cylCoords_;
         }
+
+        //- Retrieve the time lag between the two sides
+        scalar timeLag() const;
 
         //- Write the polyPatch data as a dictionary
         virtual void write(Ostream&) const;

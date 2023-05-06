@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -24,10 +24,9 @@ License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+
 \*---------------------------------------------------------------------------*/
+
 
 #include "blockFvTensorVectorMatrix.H"
 #include "fvScalarMatrix.H"
@@ -52,7 +51,7 @@ void Foam::blockFvMatrix<Foam::vector,Foam::tensor>::insertEquation
     // Get reference to this source field of block system
     vectorField& b = this->source();
 
-    tensorField& blockDiag = this->diag();
+	tensorField& blockDiag = this->diag();
 
     for (direction cmptI = 0; cmptI < 3; cmptI++)
     {
@@ -61,8 +60,8 @@ void Foam::blockFvMatrix<Foam::vector,Foam::tensor>::insertEquation
 
         forAll (diag, cellI)
         {
-		blockDiag[cellI](cmptI, cmptI) = diag[cellI];
-		b[cellI].component(cmptI) += sourceCmpt[cellI];
+			blockDiag[cellI](cmptI, cmptI) = diag[cellI];
+			b[cellI].component(cmptI) += sourceCmpt[cellI];
         }
 
         // Reset diagonal
@@ -73,7 +72,7 @@ void Foam::blockFvMatrix<Foam::vector,Foam::tensor>::insertEquation
     {
         const scalarField& upper = matrix.upper();
 
-	tensorField& blockUpper = this->upper();
+		tensorField& blockUpper = this->upper();
 
         for (direction cmptI = 0; cmptI < 3; cmptI++)
         {
@@ -88,13 +87,13 @@ void Foam::blockFvMatrix<Foam::vector,Foam::tensor>::insertEquation
     {
         const scalarField& lower = matrix.lower();
 
-	tensorField& blockLower = this->lower();
+		tensorField& blockLower = this->lower();
 
         for (direction cmptI = 0; cmptI < 3; cmptI++)
         {
             forAll (lower, faceI)
             {
-		blockLower[faceI](cmptI, cmptI) = lower[faceI];
+				blockLower[faceI](cmptI, cmptI) = lower[faceI];
             }
         }
     }
@@ -106,30 +105,31 @@ void Foam::blockFvMatrix<Foam::vector,Foam::tensor>::insertEquation
     this->interfacesUpper().resize(mesh.boundary().size());
     this->interfacesLower().resize(mesh.boundary().size());
 
+
     forAll (psi.boundaryField(), patchI)
     {
-	const fvPatchField<vector>& pf = psi.boundaryField()[patchI];
+		const fvPatchField<vector>& pf = psi.boundaryField()[patchI];
 
-	const vectorField& icp = matrix.internalCoeffs()[patchI];
-	const vectorField& bcp = matrix.boundaryCoeffs()[patchI];
+		const vectorField& icp = matrix.internalCoeffs()[patchI];
+		const vectorField& bcp = matrix.boundaryCoeffs()[patchI];
 
         this->interfacesUpper().set(patchI, new tensorField(icp.size(), tensor(Zero)));
         this->interfacesLower().set(patchI, new tensorField(icp.size(), tensor(Zero)));
 
-	tensorField& pcoupleUpper = this->interfacesUpper()[patchI];
-	tensorField& pcoupleLower = this->interfacesLower()[patchI];
+		tensorField& pcoupleUpper = this->interfacesUpper()[patchI];
+		tensorField& pcoupleLower = this->interfacesLower()[patchI];
 
-	for (direction cmptI = 0; cmptI < 3; cmptI++)
-	{
-		scalarField icpCmpt = icp.component(cmptI);
-		scalarField bcpCmpt = bcp.component(cmptI);
-
-		forAll (pf, faceI)
+		for (direction cmptI = 0; cmptI < 3; cmptI++)
 		{
-			pcoupleUpper[faceI](cmptI, cmptI) = -bcpCmpt[faceI];
-			pcoupleLower[faceI](cmptI, cmptI) = icpCmpt[faceI];
+			scalarField icpCmpt = icp.component(cmptI);
+			scalarField bcpCmpt = bcp.component(cmptI);
+
+			forAll (pf, faceI)
+			{
+				pcoupleUpper[faceI](cmptI, cmptI) = -bcpCmpt[faceI];
+				pcoupleLower[faceI](cmptI, cmptI) = icpCmpt[faceI];
+			}
 		}
-	}
     }
 }
 

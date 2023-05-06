@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022	Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,16 +23,468 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #ifndef cellFaceFunctions_H
 #define cellFaceFunctions_H
 
 #include "geometricOneField.H"
+
+//- Return the face-interpolate of the given cell field
+//-  with the given owner and neighbour multipliers
+
+template<class Type>
+tmp<GeometricField<Type, fvsPatchField, surfaceMesh> >
+ownerNeighbourSum
+(
+    const GeometricField<Type, fvPatchField, volMesh>& vf,
+    const tmp<surfaceScalarField>& tsfP,
+    const tmp<surfaceScalarField>& tsfN
+)
+{
+    const surfaceScalarField& sfP = tsfP();
+    const surfaceScalarField& sfN = tsfN();
+
+    const Field<Type>& vfi = vf.internalField();
+    const scalarField& sfPi = sfP.internalField();
+    const scalarField& sfNi = sfN.internalField();
+
+    const fvMesh& mesh = vf.mesh();
+    const labelUList& P = mesh.owner();
+    const labelUList& N = mesh.neighbour();
+
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsf
+    (
+        new GeometricField<Type, fvsPatchField, surfaceMesh>
+        (
+            IOobject
+            (
+                vf.name()+'*'+sfP.name()+'+'+vf.name()+'*'+sfN.name(),
+                vf.instance(),
+                vf.db()
+            ),
+            mesh,
+            vf.dimensions()*sfP.dimensions()
+        )
+    );
+    GeometricField<Type, fvsPatchField, surfaceMesh>& sf = tsf();
+
+    if (sfP.dimensions() != sfN.dimensions())
+    {
+        FatalErrorIn("template<class Type>"
+                     "tmp<GeometricField<Type, fvsPatchField, surfaceMesh> >"
+                     "ownerNeighbourSum"
+                     "("
+                     "  const GeometricField<Type, fvPatchField, volMesh>& vf,"
+                     "  const tmp<surfaceScalarField>& tsfP,"
+                     "  const tmp<surfaceScalarField>& tsfN"
+                     ")") << nl
+                     << "Dimensions of sfP and sfN differ: " << nl
+                     << sfP.dimensions() << " != " << sfN.dimensions() << nl
+                     << exit(FatalError);
+    }
+
+    Field<Type>& sfi = sf.internalField();
+
+    forAll(P, fi)
+    {
+        sfi[fi] = sfPi[fi]*vfi[P[fi]] + sfNi[fi]*vfi[N[fi]];
+    }
+
+    forAll(sfP.boundaryField(), pi)
+    {
+        const fvsPatchScalarField& psfP = sfP.boundaryField()[pi];
+        const fvsPatchScalarField& psfN = sfN.boundaryField()[pi];
+
+        if (vf.boundaryField()[pi].coupled())
+        {
+            sf.boundaryField()[pi] =
+                psfP*vf.boundaryField()[pi].patchInternalField()
+              + psfN*vf.boundaryField()[pi].patchNeighbourField();
+        }
+        else
+        {
+            sf.boundaryField()[pi] = (psfP+psfN)*vf.boundaryField()[pi];
+        }
+    }
+
+    tsfP.clear();
+    tsfN.clear();
+
+    return tsf;
+}
+
+
+//- Return the owner cell values at each face
+
+template<class Type>
+tmp<GeometricField<Type, fvsPatchField, surfaceMesh> >
+ownerField
+(
+    const GeometricField<Type, fvPatchField, volMesh>& vf
+)
+{
+    const Field<Type>& vfi = vf.internalField();
+
+    const fvMesh& mesh = vf.mesh();
+    const labelUList& P = mesh.owner();
+
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsf
+    (
+        new GeometricField<Type, fvsPatchField, surfaceMesh>
+        (
+            IOobject
+            (
+                "owner("+vf.name()+')',
+                vf.instance(),
+                vf.db()
+            ),
+            mesh,
+            vf.dimensions()
+        )
+    );
+    GeometricField<Type, fvsPatchField, surfaceMesh>& sf = tsf();
+
+    Field<Type>& sfi = sf.internalField();
+
+    forAll(P, fi)
+    {
+        sfi[fi] = vfi[P[fi]];
+    }
+
+    forAll(vf.boundaryField(), pi)
+    {
+        if (vf.boundaryField()[pi].coupled())
+        {
+            sf.boundaryField()[pi] = vf.boundaryField()[pi].patchInternalField();
+        }
+        else
+        {
+            sf.boundaryField()[pi] = vf.boundaryField()[pi];
+        }
+    }
+
+    return tsf;
+}
+
+template<class Type>
+tmp<GeometricField<Type, fvsPatchField, surfaceMesh> >
+ownerField
+(
+    const tmp<GeometricField<Type, fvPatchField, volMesh> > tvf
+)
+{
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsf = ownerField(tvf());
+    tvf.clear();
+    return tsf;
+}
+
+
+//- Return the neighbour cell values at each face
+
+template<class Type>
+tmp<GeometricField<Type, fvsPatchField, surfaceMesh> >
+neighbourField
+(
+    const GeometricField<Type, fvPatchField, volMesh>& vf
+)
+{
+    const Field<Type>& vfi = vf.internalField();
+
+    const fvMesh& mesh = vf.mesh();
+    const labelUList& N = mesh.neighbour();
+
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsf
+    (
+        new GeometricField<Type, fvsPatchField, surfaceMesh>
+        (
+            IOobject
+            (
+                "neighbour("+vf.name()+')',
+                vf.instance(),
+                vf.db()
+            ),
+            mesh,
+            vf.dimensions()
+        )
+    );
+    GeometricField<Type, fvsPatchField, surfaceMesh>& sf = tsf();
+
+    Field<Type>& sfi = sf.internalField();
+
+    forAll(N, fi)
+    {
+        sfi[fi] = vfi[N[fi]];
+    }
+
+    forAll(vf.boundaryField(), pi)
+    {
+        if (vf.boundaryField()[pi].coupled())
+        {
+            sf.boundaryField()[pi] = vf.boundaryField()[pi].patchNeighbourField();
+        }
+        else
+        {
+            sf.boundaryField()[pi] = vf.boundaryField()[pi];
+        }
+    }
+
+    return tsf;
+}
+
+template<class Type>
+tmp<GeometricField<Type, fvsPatchField, surfaceMesh> >
+neighbourField
+(
+    const tmp<GeometricField<Type, fvPatchField, volMesh> > tvf
+)
+{
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsf = neighbourField(tvf());
+    tvf.clear();
+    return tsf;
+}
+
+
+//- Return the surface sum taking into account different owner and
+//- neighbour fields
+
+template<class Type>
+tmp<GeometricField<Type, fvPatchField, volMesh> >
+surfaceSum
+(
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& sfO,
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& sfN
+)
+{
+    const fvMesh& mesh = sfO.mesh();
+
+    tmp<GeometricField<Type, fvPatchField, volMesh> > tvf
+    (
+        new GeometricField<Type, fvPatchField, volMesh>
+        (
+            IOobject
+            (
+                "surfaceSum("+sfO.name()+","+sfN.name()+')',
+                sfO.instance(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh,
+            dimensioned<Type>("0", sfO.dimensions(), pTraits<Type>::zero),
+            zeroGradientFvPatchField<Type>::typeName
+        )
+    );
+    GeometricField<Type, fvPatchField, volMesh>& vf = tvf();
+
+    if (sfO.dimensions() != sfN.dimensions())
+    {
+        FatalErrorIn("template<class Type>"
+                     "tmp<GeometricField<Type, fvPatchField, volMesh> >"
+                     "surfaceSum"
+                     "("
+                     "  const GeometricField<Type, fvsPatchField, surfaceMesh>& sfO,"
+                     "  const GeometricField<Type, fvsPatchField, surfaceMesh>& sfN"
+                     ")") << nl
+                     << "Dimensions of sfO and sfN differ: " << nl
+                     << sfO.dimensions() << " != " << sfN.dimensions() << nl
+                     << exit(FatalError);
+    }
+
+    const labelUList& owner = mesh.owner();
+    const labelUList& neighbour = mesh.neighbour();
+
+    forAll(owner, facei)
+    {
+        vf[owner[facei]] += sfO[facei];
+        vf[neighbour[facei]] += sfN[facei];
+    }
+
+    forAll(mesh.boundary(), patchi)
+    {
+        const labelUList& pFaceCells =
+            mesh.boundary()[patchi].faceCells();
+
+        const fvsPatchField<Type>& psfO = sfO.boundaryField()[patchi];
+
+        forAll(mesh.boundary()[patchi], facei)
+        {
+            vf[pFaceCells[facei]] += psfO[facei];
+        }
+    }
+
+    vf.correctBoundaryConditions();
+
+    return tvf;
+}
+
+template<class Type>
+tmp<GeometricField<Type, fvPatchField, volMesh> >
+surfaceSum
+(
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsfO,
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsfN
+)
+{
+    tmp<GeometricField<Type, fvPatchField, volMesh> > tvf = surfaceSum(tsfO(), tsfN());
+    tsfO.clear();
+    tsfN.clear();
+    return tvf;
+}
+
+
+//- Return the surface sum taking into account different owner and
+//- neighbour fields, doing only coupled boundary faces and ignoring
+//- physical boundaries
+
+template<class Type>
+tmp<GeometricField<Type, fvPatchField, volMesh> >
+intSurfaceSum
+(
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& sfO,
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& sfN
+)
+{
+    const fvMesh& mesh = sfO.mesh();
+
+    tmp<GeometricField<Type, fvPatchField, volMesh> > tvf
+    (
+        new GeometricField<Type, fvPatchField, volMesh>
+        (
+            IOobject
+            (
+                "surfaceSum("+sfO.name()+","+sfN.name()+')',
+                sfO.instance(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh,
+            dimensioned<Type>("0", sfO.dimensions(), pTraits<Type>::zero),
+            zeroGradientFvPatchField<Type>::typeName
+        )
+    );
+    GeometricField<Type, fvPatchField, volMesh>& vf = tvf();
+
+    if (sfO.dimensions() != sfN.dimensions())
+    {
+        FatalErrorIn("template<class Type>"
+                     "tmp<GeometricField<Type, fvPatchField, volMesh> >"
+                     "surfaceSum"
+                     "("
+                     "  const GeometricField<Type, fvsPatchField, surfaceMesh>& sfO,"
+                     "  const GeometricField<Type, fvsPatchField, surfaceMesh>& sfN"
+                     ")") << nl
+                     << "Dimensions of sfO and sfN differ: " << nl
+                     << sfO.dimensions() << " != " << sfN.dimensions() << nl
+                     << exit(FatalError);
+    }
+
+    const labelUList& owner = mesh.owner();
+    const labelUList& neighbour = mesh.neighbour();
+
+    forAll(owner, facei)
+    {
+        vf[owner[facei]] += sfO[facei];
+        vf[neighbour[facei]] += sfN[facei];
+    }
+
+    forAll(mesh.boundary(), patchi)
+    {
+        const labelUList& pFaceCells =
+            mesh.boundary()[patchi].faceCells();
+
+        const fvsPatchField<Type>& psfO = sfO.boundaryField()[patchi];
+
+        forAll(mesh.boundary()[patchi], facei)
+        {
+            if (mesh.boundary()[patchi].coupled())
+            {
+                vf[pFaceCells[facei]] += psfO[facei];
+            }
+        }
+    }
+
+    vf.correctBoundaryConditions();
+
+    return tvf;
+}
+
+template<class Type>
+tmp<GeometricField<Type, fvPatchField, volMesh> >
+intSurfaceSum
+(
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsfO,
+    tmp<GeometricField<Type, fvsPatchField, surfaceMesh> > tsfN
+)
+{
+    tmp<GeometricField<Type, fvPatchField, volMesh> > tvf = intSurfaceSum(tsfO(), tsfN());
+    tsfO.clear();
+    tsfN.clear();
+    return tvf;
+}
+
+
+//- Calculate surface sum including only coupled boundaries
+
+template<class Type>
+tmp<GeometricField<Type, fvPatchField, volMesh> >
+intSurfaceSum
+(
+    const GeometricField<Type, fvsPatchField, surfaceMesh>& sf
+)
+{
+    const fvMesh& mesh = sf.mesh();
+
+    tmp<GeometricField<Type, fvPatchField, volMesh> > tvf
+    (
+        new GeometricField<Type, fvPatchField, volMesh>
+        (
+            IOobject
+            (
+                "surfaceSum("+sf.name()+')',
+                sf.instance(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh,
+            dimensioned<Type>("0", sf.dimensions(), pTraits<Type>::zero),
+            zeroGradientFvPatchField<Type>::typeName
+        )
+    );
+    GeometricField<Type, fvPatchField, volMesh>& vf = tvf();
+
+    const labelUList& owner = mesh.owner();
+    const labelUList& neighbour = mesh.neighbour();
+
+    forAll(owner, facei)
+    {
+        vf[owner[facei]] += sf[facei];
+        vf[neighbour[facei]] += sf[facei];
+    }
+
+    forAll(mesh.boundary(), patchi)
+    {
+        const labelUList& pFaceCells =
+            mesh.boundary()[patchi].faceCells();
+
+        const fvsPatchField<Type>& psf = sf.boundaryField()[patchi];
+
+        forAll(mesh.boundary()[patchi], facei)
+        {
+            if (mesh.boundary()[patchi].coupled())
+            {
+                vf[pFaceCells[facei]] += psf[facei];
+            }
+        }
+    }
+
+    vf.correctBoundaryConditions();
+
+    return tvf;
+}
+
 
 // Select from one or the other surface field comparing to a threshold value
 template<class Type>

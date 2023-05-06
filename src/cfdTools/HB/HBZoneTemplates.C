@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "HBZone.H"
@@ -352,6 +345,23 @@ void Foam::HBZone::reconstruct
 		E_1[k] = e;
 	}
 
+	complex t(0,0);
+	List<complex> transfOp(nO, t);
+
+	for (label m=0; m<nO; m++)
+	{
+		for (label n=0; n<nT; n++)
+		{
+			transfOp[m] += E_1[n]*E_[n][m];
+		}
+	}
+
+	scalarList transfOpRe(nO, 0.0);
+
+	forAll(transfOpRe, J)
+	{
+		transfOpRe[J] = transfOp[J].Re();
+	}
 
     if (cellZoneID_ == -1)
     {
@@ -366,24 +376,6 @@ void Foam::HBZone::reconstruct
 
     	for (Foam::label celli=0; celli<cellNo; ++celli)
     	{
-    		complex t(0,0);
-    		List<complex> transfOp(nO, t);
-
-			for (label m=0; m<nO; m++)
-			{
-				for (label n=0; n<nT; n++)
-				{
-					transfOp[m] += E_1[n]*E_[n][m];
-				}
-			}
-
-			scalarList transfOpRe(nO, 0.0);
-
-			forAll(transfOpRe, J)
-			{
-				transfOpRe[J] = transfOp[J].Re();
-			}
-
     		reconstrFld[celli] = Zero;
 
     		for (label l=0; l<nO; l++)
@@ -399,24 +391,6 @@ void Foam::HBZone::reconstruct
     	forAll (cells, i)
     	{
 			label celli = cells[i];
-
-    		complex t(0,0);
-    		List<complex> transfOp(nO, t);
-
-			for (label m=0; m<nO; m++)
-			{
-				for (label n=0; n<nT; n++)
-				{
-					transfOp[m] += E_1[n]*E_[n][m];
-				}
-			}
-
-			scalarList transfOpRe(nO, 0.0);
-
-			forAll(transfOpRe, J)
-			{
-				transfOpRe[J] = transfOp[J].Re();
-			}
 
     		reconstrFld[celli] = Zero;
 

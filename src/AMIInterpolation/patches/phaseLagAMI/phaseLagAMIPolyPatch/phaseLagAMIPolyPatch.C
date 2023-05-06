@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "phaseLagAMIPolyPatch.H"
@@ -42,6 +35,8 @@ Author
 #include "OBJstream.H"
 #include "PatchTools.H"
 #include "Time.H"
+
+#include "IOHBZoneList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -59,23 +54,6 @@ const Foam::scalar Foam::phaseLagAMIPolyPatch::tolerance_ = 1e-10;
 
 void Foam::phaseLagAMIPolyPatch::syncTransforms() const
 {
-
-	// At this point we guarantee that the transformations have been
-	// updated. There is one particular case, where if the periodic patch
-	// locally has zero faces then its transformation will not be set. We
-	// need to synchronise the transforms over the zero-sized patches as
-	// well.
-	//
-	// We can't put the logic into cyclicPolyPatch as
-	// processorCyclicPolyPatch uses cyclicPolyPatch functionality.
-	// Synchronisation will fail because processor-type patches do not exist
-	// on all processors.
-	//
-	// The use in cyclicPeriodicAMI is special; we use the patch even
-	// though we have no faces in it. Ideally, in future, the transformation
-	// logic will be abstracted out, and we won't need a periodic patch
-	// here. Until then, we can just fix the behaviour of the zero-sized
-	// coupled patches here
 
 	// Get the periodic patch
 	const coupledPolyPatch& periodicPatch
@@ -111,15 +89,6 @@ void Foam::phaseLagAMIPolyPatch::syncTransforms() const
 				<< exit(FatalError);
 		}
 
-		// Note that zero-sized patches will have zero-sized fields for the
-		// separation vector, forward and reverse transforms. These need
-		// replacing with the transformations from other processors.
-
-		// Parallel in this context refers to a parallel transformation,
-		// rather than a rotational transformation.
-
-		// Note that a cyclic with zero faces is considered parallel so
-		// explicitly check for that.
 		bool isParallel =
 		(
 			periodicPatch.size()
@@ -310,11 +279,11 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
         pointField thisPoints0(localPoints());
         pointField nbrPoints0(neighbPatch().localPoints());
 
-	pointField expandedPointsSrc(thisPoints0);
-	faceList expandedFacesListSrc(localFaces());
+		pointField expandedPointsSrc(thisPoints0);
+		faceList expandedFacesListSrc(localFaces());
 
-	pointField expandedPointsTgt(nbrPoints0);
-	faceList expandedFacesListTgt(neighbPatch().localFaces());
+		pointField expandedPointsTgt(nbrPoints0);
+		faceList expandedFacesListTgt(neighbPatch().localFaces());
 
         autoPtr<OBJstream> ownStr;
         autoPtr<OBJstream> neiStr;
@@ -403,7 +372,7 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
         // Apply the stored number of periodic transforms
         for (label i = 0; i < nTransformsFwd_; ++ i)
         {
-            faceList geomLocalFacesSrcPre(localFaces());
+        	faceList geomLocalFacesSrcPre(localFaces());
 
             periodicPatchOwn.transformPosition(thisPoints);
 
@@ -413,18 +382,21 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
             copyOffsetGeomPreSrc += thisPoints0.size();
 
-	    forAll (geomLocalFacesSrcPre, faceI)
-	    {  
-	 	face& curGeomFace = geomLocalFacesSrcPre[faceI];
+			forAll (geomLocalFacesSrcPre, faceI)
+			{
+				face& curGeomFace = geomLocalFacesSrcPre[faceI];
 
-		forAll (curGeomFace, fpI)
-		{
-			curGeomFace[fpI] += copyOffsetGeomPreSrc;
-		}
-	    }
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPreSrc;
+				}
+			}
 
-	    expandedFacesListSrc.append(geomLocalFacesSrcPre);
+			expandedFacesListSrc.append(geomLocalFacesSrcPre);
         }
+
+
+
 
         //SRC step
 
@@ -436,23 +408,23 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
         	neighbPatch().revTransformPositionPatch(nbrPoints, periodicPatchNeigh);
 
-		expandedPointsTgt.append(nbrPoints);
+			expandedPointsTgt.append(nbrPoints);
 
-		nbrPatch.movePoints(nbrPoints);
+			nbrPatch.movePoints(nbrPoints);
 
-		copyOffsetGeomPreTgt += nbrPoints0.size();
+			copyOffsetGeomPreTgt += nbrPoints0.size();
 
-		forAll (geomLocalFacesTgtPre, faceI)
-		{
-			face& curGeomFace = geomLocalFacesTgtPre[faceI];
-
-			forAll (curGeomFace, fpI)
+			forAll (geomLocalFacesTgtPre, faceI)
 			{
-				curGeomFace[fpI] += copyOffsetGeomPreTgt;
-			}
-		}
+				face& curGeomFace = geomLocalFacesTgtPre[faceI];
 
-		expandedFacesListTgt.append(geomLocalFacesTgtPre);
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPreTgt;
+				}
+			}
+
+			expandedFacesListTgt.append(geomLocalFacesTgtPre);
         }
 
         pointField lastPointsOppDirTrg(nbrPoints);
@@ -465,23 +437,23 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
         	periodicPatchNeigh.transformPosition(nbrPoints);
 
-		expandedPointsTgt.append(nbrPoints);
+			expandedPointsTgt.append(nbrPoints);
 
-		nbrPatch.movePoints(nbrPoints);
+			nbrPatch.movePoints(nbrPoints);
 
-		copyOffsetGeomPreTgt += nbrPoints0.size();
+			copyOffsetGeomPreTgt += nbrPoints0.size();
 
-		forAll (geomLocalFacesTgtPre, faceI)
-		{
-			face& curGeomFace = geomLocalFacesTgtPre[faceI];
-
-			forAll (curGeomFace, fpI)
+			forAll (geomLocalFacesTgtPre, faceI)
 			{
-				curGeomFace[fpI] += copyOffsetGeomPreTgt;
-			}
-		}
+				face& curGeomFace = geomLocalFacesTgtPre[faceI];
 
-		expandedFacesListTgt.append(geomLocalFacesTgtPre);
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPreTgt;
+				}
+			}
+
+			expandedFacesListTgt.append(geomLocalFacesTgtPre);
         }
 
         pointField	expandedPointsSrcPre(expandedPointsSrc);
@@ -490,16 +462,16 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
         faceList expandedFacesListSrcPre(expandedFacesListSrc);
         faceList expandedFacesListTgtPre(expandedFacesListTgt);
 
-	SubList<face> expandedFacesSrcPre(expandedFacesListSrcPre);
-	primitivePatch expandedPatchSrcPre(expandedFacesSrcPre, expandedPointsSrcPre);
+		SubList<face> expandedFacesSrcPre(expandedFacesListSrcPre);
+		primitivePatch expandedPatchSrcPre(expandedFacesSrcPre, expandedPointsSrcPre);
 
-	SubList<face> expandedFacesTrgPre(expandedFacesListTgtPre);
-	primitivePatch expandedPatchTrgPre(expandedFacesTrgPre, expandedPointsTrgPre);
+		SubList<face> expandedFacesTrgPre(expandedFacesListTgtPre);
+		primitivePatch expandedPatchTrgPre(expandedFacesTrgPre, expandedPointsTrgPre);
 
         // Construct a new AMI interpolation between the initial patch locations
         AMIPtr_->setRequireMatch(false);
-        AMIPtr_->upToDate() = false;
-        AMIPtr_->calculate(expandedPatchSrcPre, nbrPatch0);
+	    AMIPtr_->upToDate() = false;
+	    AMIPtr_->calculate(expandedPatchSrcPre, nbrPatch0);
 
         // Number of geometry replications
         label iter(0);
@@ -536,6 +508,8 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
             << endl;
 
         // TGT step, transform the source until the target is completely covered
+
+
         while
         (
             (iter < maxIter_)
@@ -556,23 +530,23 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
             	const label copyOffsetGeom = (nTransforms_+1)*thisPoints0.size();
 
-    		forAll (geomLocalFacesSrc, faceI)
-    		{
-    			face& curGeomFace = geomLocalFacesSrc[faceI];
+    			forAll (geomLocalFacesSrc, faceI)
+    			{
+    				face& curGeomFace = geomLocalFacesSrc[faceI];
 
-   			forAll (curGeomFace, fpI)
-   			{
-   				curGeomFace[fpI] += copyOffsetGeom;
+    				forAll (curGeomFace, fpI)
+    				{
+    					curGeomFace[fpI] += copyOffsetGeom;
+    				}
     			}
-   		}
 
-    		expandedFacesListSrc.append(geomLocalFacesSrc);
+    			expandedFacesListSrc.append(geomLocalFacesSrc);
 
-    		SubList<face> expandedFacesSrc(expandedFacesListSrc);
-    		primitivePatch expandedPatchSrc(expandedFacesSrc, expandedPointsSrc);
+    			SubList<face> expandedFacesSrc(expandedFacesListSrc);
+    			primitivePatch expandedPatchSrc(expandedFacesSrc, expandedPointsSrc);
 
-    		AMIPtr_->upToDate() = false;
-    		AMIPtr_->setRequireMatch(false);
+    			AMIPtr_->upToDate() = false;
+    			AMIPtr_->setRequireMatch(false);
                 AMIPtr_->calculate(expandedPatchSrc, nbrPatch0);
 
                 nTransformsFwd_ ++;
@@ -592,23 +566,23 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
             	const label copyOffsetGeom = (nTransforms_+1)*thisPoints0.size();
 
-    		forAll (geomLocalFacesSrc, faceI)
-    		{
-    			face& curGeomFace = geomLocalFacesSrc[faceI];
+    			forAll (geomLocalFacesSrc, faceI)
+    			{
+    				face& curGeomFace = geomLocalFacesSrc[faceI];
 
-   			forAll (curGeomFace, fpI)
-   			{
-    				curGeomFace[fpI] += copyOffsetGeom;
+    				forAll (curGeomFace, fpI)
+    				{
+    					curGeomFace[fpI] += copyOffsetGeom;
+    				}
     			}
-    		}
 
-    		expandedFacesListSrc.append(geomLocalFacesSrc);
+    			expandedFacesListSrc.append(geomLocalFacesSrc);
 
-    		SubList<face> expandedFacesSrc(expandedFacesListSrc);
-    		primitivePatch expandedPatchSrc(expandedFacesSrc, expandedPointsSrc);
+    			SubList<face> expandedFacesSrc(expandedFacesListSrc);
+    			primitivePatch expandedPatchSrc(expandedFacesSrc, expandedPointsSrc);
 
-    		AMIPtr_->upToDate() = false;
-    		AMIPtr_->setRequireMatch(false);
+    			AMIPtr_->upToDate() = false;
+    			AMIPtr_->setRequireMatch(false);
                 AMIPtr_->calculate(expandedPatchSrc, nbrPatch0);
 
                 nTransformsBwd_ ++;
@@ -678,23 +652,23 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
             	const label copyOffsetGeom = (neighbPatch().nTransforms() + 1)*nbrPoints0.size();
 
-    		forAll (geomLocalFacesTgt, faceI)
-    		{
-    			face& curGeomFace = geomLocalFacesTgt[faceI];
-
-    			forAll (curGeomFace, fpI)
+    			forAll (geomLocalFacesTgt, faceI)
     			{
-    				curGeomFace[fpI] += copyOffsetGeom;
+    				face& curGeomFace = geomLocalFacesTgt[faceI];
+
+    				forAll (curGeomFace, fpI)
+    				{
+    					curGeomFace[fpI] += copyOffsetGeom;
+    				}
     			}
-    		}
 
-    		expandedFacesListTgt.append(geomLocalFacesTgt);
+    			expandedFacesListTgt.append(geomLocalFacesTgt);
 
-    		SubList<face> expandedFacesTgt(expandedFacesListTgt);
-    		primitivePatch expandedPatchTgt(expandedFacesTgt, expandedPointsTgt);
+    			SubList<face> expandedFacesTgt(expandedFacesListTgt);
+    			primitivePatch expandedPatchTgt(expandedFacesTgt, expandedPointsTgt);
 
-    		AMIPtr_->upToDate() = false;
-    		AMIPtr_->setRequireMatch(false);
+    			AMIPtr_->upToDate() = false;
+    			AMIPtr_->setRequireMatch(false);
                 AMIPtr_->calculate(thisPatch0, expandedPatchTgt);
 
                 neighbPatch().nTransformsFwd() ++;
@@ -714,23 +688,23 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
 
             	const label copyOffsetGeom = (neighbPatch().nTransforms() + 1)*nbrPoints0.size();
 
-    		forAll (geomLocalFacesTgt, faceI)
-    		{
-    			face& curGeomFace = geomLocalFacesTgt[faceI];
-
-   			forAll (curGeomFace, fpI)
+    			forAll (geomLocalFacesTgt, faceI)
     			{
-    				curGeomFace[fpI] += copyOffsetGeom;
+    				face& curGeomFace = geomLocalFacesTgt[faceI];
+
+    				forAll (curGeomFace, fpI)
+    				{
+    					curGeomFace[fpI] += copyOffsetGeom;
+    				}
     			}
-    		}
 
-    		expandedFacesListTgt.append(geomLocalFacesTgt);
+    			expandedFacesListTgt.append(geomLocalFacesTgt);
 
-    		SubList<face> expandedFacesTgt(expandedFacesListTgt);
-    		primitivePatch expandedPatchTgt(expandedFacesTgt, expandedPointsTgt);
+    			SubList<face> expandedFacesTgt(expandedFacesListTgt);
+    			primitivePatch expandedPatchTgt(expandedFacesTgt, expandedPointsTgt);
 
-    		AMIPtr_->upToDate() = false;
-    		AMIPtr_->setRequireMatch(false);
+    			AMIPtr_->upToDate() = false;
+    			AMIPtr_->setRequireMatch(false);
                 AMIPtr_->calculate(thisPatch0, expandedPatchTgt);
 
                 neighbPatch().nTransformsBwd() ++;
@@ -774,129 +748,132 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
                 << endl;
         }
 
+
+
+
         //Reorder the interpolation
 
         thisPoints = thisPoints0;
         nbrPoints = nbrPoints0;
 
-	expandedPointsSrc = thisPoints0;
-	expandedFacesListSrc = localFaces();
+        expandedPoints_ = thisPoints0;
+        expandedFaces_ = localFaces();
 
-	expandedPointsTgt = nbrPoints0;
-	expandedFacesListTgt = neighbPatch().localFaces();
+        neighbPatch().expandedPoints_ = nbrPoints0;
+        neighbPatch().expandedFaces_ = neighbPatch().localFaces();
 
         //TGT step
-	label copyOffsetGeomPostSrc = 0;
+		label copyOffsetGeomPostSrc = 0;
 
-	for (label i = 0; i < nTransformsBwd_; ++ i)
-	{
-		faceList geomLocalFacesSrcPost(localFaces());
-
-		revTransformPositionPatch(thisPoints, periodicPatchOwn);
-
-		expandedPointsSrc.append(thisPoints);
-
-		thisPatch.movePoints(thisPoints);
-
-		copyOffsetGeomPostSrc += thisPoints0.size();
-
-		forAll (geomLocalFacesSrcPost, faceI)
+		for (label i = 0; i < nTransformsBwd_; ++ i)
 		{
-			face& curGeomFace = geomLocalFacesSrcPost[faceI];
+			faceList geomLocalFacesSrcPost(localFaces());
 
-			forAll (curGeomFace, fpI)
+			revTransformPositionPatch(thisPoints, periodicPatchOwn);
+
+			expandedPoints_.append(thisPoints);
+
+			thisPatch.movePoints(thisPoints);
+
+			copyOffsetGeomPostSrc += thisPoints0.size();
+
+			forAll (geomLocalFacesSrcPost, faceI)
 			{
-				curGeomFace[fpI] += copyOffsetGeomPostSrc;
+				face& curGeomFace = geomLocalFacesSrcPost[faceI];
+
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPostSrc;
+				}
 			}
+
+			expandedFaces_.append(geomLocalFacesSrcPost);
 		}
 
-		expandedFacesListSrc.append(geomLocalFacesSrcPost);
-	}
+		thisPoints = thisPoints0;
 
-	thisPoints = thisPoints0;
-
-	// Apply the stored number of periodic transforms
-	for (label i = 0; i < nTransformsFwd_; ++ i)
-	{
-		faceList geomLocalFacesSrcPost(localFaces());
-
-		periodicPatchOwn.transformPosition(thisPoints);
-
-		expandedPointsSrc.append(thisPoints);
-
-		thisPatch.movePoints(thisPoints);
-
-		copyOffsetGeomPostSrc += thisPoints0.size();
-
-		forAll (geomLocalFacesSrcPost, faceI)
+		// Apply the stored number of periodic transforms
+		for (label i = 0; i < nTransformsFwd_; ++ i)
 		{
-			face& curGeomFace = geomLocalFacesSrcPost[faceI];
+			faceList geomLocalFacesSrcPost(localFaces());
 
-			forAll (curGeomFace, fpI)
+			periodicPatchOwn.transformPosition(thisPoints);
+
+			expandedPoints_.append(thisPoints);
+
+			thisPatch.movePoints(thisPoints);
+
+			copyOffsetGeomPostSrc += thisPoints0.size();
+
+			forAll (geomLocalFacesSrcPost, faceI)
 			{
-				curGeomFace[fpI] += copyOffsetGeomPostSrc;
+				face& curGeomFace = geomLocalFacesSrcPost[faceI];
+
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPostSrc;
+				}
 			}
+
+			expandedFaces_.append(geomLocalFacesSrcPost);
 		}
 
-		expandedFacesListSrc.append(geomLocalFacesSrcPost);
-	}
+		//SRC step
 
-	//SRC step
+		label copyOffsetGeomPostTgt = 0;
 
-	label copyOffsetGeomPostTgt = 0;
-
-	for (label i = 0; i < neighbPatch().nTransformsBwd(); ++ i)
-	{
-		faceList geomLocalFacesTgtPost(neighbPatch().localFaces());
-
-		neighbPatch().revTransformPositionPatch(nbrPoints, periodicPatchNeigh);
-
-		expandedPointsTgt.append(nbrPoints);
-
-		nbrPatch.movePoints(nbrPoints);
-
-		copyOffsetGeomPostTgt += nbrPoints0.size();
-
-		forAll (geomLocalFacesTgtPost, faceI)
+		for (label i = 0; i < neighbPatch().nTransformsBwd(); ++ i)
 		{
-			face& curGeomFace = geomLocalFacesTgtPost[faceI];
+			faceList geomLocalFacesTgtPost(neighbPatch().localFaces());
 
-			forAll (curGeomFace, fpI)
+			neighbPatch().revTransformPositionPatch(nbrPoints, periodicPatchNeigh);
+
+			neighbPatch().expandedPoints_.append(nbrPoints);
+
+			nbrPatch.movePoints(nbrPoints);
+
+			copyOffsetGeomPostTgt += nbrPoints0.size();
+
+			forAll (geomLocalFacesTgtPost, faceI)
 			{
-				curGeomFace[fpI] += copyOffsetGeomPostTgt;
+				face& curGeomFace = geomLocalFacesTgtPost[faceI];
+
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPostTgt;
+				}
 			}
+
+			neighbPatch().expandedFaces_.append(geomLocalFacesTgtPost);
 		}
 
-		expandedFacesListTgt.append(geomLocalFacesTgtPost);
-	}
+		nbrPoints = nbrPoints0;
 
-	nbrPoints = nbrPoints0;
-
-	// Apply the stored number of periodic transforms
-	for (label i = 0; i < neighbPatch().nTransformsFwd(); ++ i)
-	{
-		faceList geomLocalFacesTgtPost(neighbPatch().localFaces());
-
-		periodicPatchNeigh.transformPosition(nbrPoints);
-
-		expandedPointsTgt.append(nbrPoints);
-
-		nbrPatch.movePoints(nbrPoints);
-
-		copyOffsetGeomPostTgt += nbrPoints0.size();
-
-		forAll (geomLocalFacesTgtPost, faceI)
+		// Apply the stored number of periodic transforms
+		for (label i = 0; i < neighbPatch().nTransformsFwd(); ++ i)
 		{
-			face& curGeomFace = geomLocalFacesTgtPost[faceI];
+			faceList geomLocalFacesTgtPost(neighbPatch().localFaces());
 
-			forAll (curGeomFace, fpI)
+			periodicPatchNeigh.transformPosition(nbrPoints);
+
+			neighbPatch().expandedPoints_.append(nbrPoints);
+
+			nbrPatch.movePoints(nbrPoints);
+
+			copyOffsetGeomPostTgt += nbrPoints0.size();
+
+			forAll (geomLocalFacesTgtPost, faceI)
 			{
-				curGeomFace[fpI] += copyOffsetGeomPostTgt;
-			}
-		}
+				face& curGeomFace = geomLocalFacesTgtPost[faceI];
 
-		expandedFacesListTgt.append(geomLocalFacesTgtPost);
-	}
+				forAll (curGeomFace, fpI)
+				{
+					curGeomFace[fpI] += copyOffsetGeomPostTgt;
+				}
+			}
+
+			neighbPatch().expandedFaces_.append(geomLocalFacesTgtPost);
+		}
 
         // Close debug streams
         if (ownStr.valid())
@@ -908,28 +885,28 @@ void Foam::phaseLagAMIPolyPatch::resetAMI() const
             neiStr.clear();
         }
 
-	SubList<face> expandedFacesSrc(expandedFacesListSrc);
-	primitivePatch expandedPatchSrc(expandedFacesSrc, expandedPointsSrc);
+		SubList<face> expandedFacesSrc(expandedFaces_);
+		expandedPatchPtr_.set(new primitivePatch(expandedFacesSrc, expandedPoints_));
 
-	SubList<face> expandedFacesTrg(expandedFacesListTgt);
-	primitivePatch expandedPatchTrg(expandedFacesTrg, expandedPointsTgt);
+		SubList<face> expandedFacesTrg(neighbPatch().expandedFaces_);
+		neighbPatch().expandedPatchPtr_.set(new primitivePatch(expandedFacesTrg, neighbPatch().expandedPoints_));
 
-	if (debug > 1)
-	{
-		Info << "Writing expanded geom patch as VTK" << endl;
+		if (debug > 1)
+		{
+			Info << "Writing expanded geom patch as VTK" << endl;
 
-		const Time& t = boundaryMesh().mesh().time();
-		OFstream osSrc(t.path()/name() + "_extendedPatch.obj");
-		OFstream osTrg(t.path()/neighbPatch().name() + "_extendedPatch.obj");
-		meshTools::writeOBJ(osSrc, expandedFacesSrc, expandedPointsSrc);
-		meshTools::writeOBJ(osTrg, expandedFacesTrg, expandedPointsTgt);
-	}
+			const Time& t = boundaryMesh().mesh().time();
+			OFstream osSrc(t.path()/name() + "_extendedPatch.obj");
+			OFstream osTrg(t.path()/neighbPatch().name() + "_extendedPatch.obj");
+			meshTools::writeOBJ(osSrc, expandedFacesSrc, expandedPoints_);
+			meshTools::writeOBJ(osTrg, expandedFacesTrg, neighbPatch().expandedPoints_);
+		}
 
-    AMIPtr_->setRequireMatch(false);
+	    AMIPtr_->setRequireMatch(false);
 
-    // Construct/apply AMI interpolation to determine addressing and weights
-    AMIPtr_->upToDate() = false;
-    AMIPtr_->calculate(expandedPatchSrc, expandedPatchTrg);
+	    // Construct/apply AMI interpolation to determine addressing and weights
+	    AMIPtr_->upToDate() = false;
+	    AMIPtr_->calculate(expandedPatchPtr_(), neighbPatch().expandedPatchPtr_());
 
         // Print some statistics
         const label nFace = returnReduce(size(), sumOp<label>());
@@ -1021,6 +998,20 @@ void Foam::phaseLagAMIPolyPatch::movePoints
 )
 {
     DebugInFunction << endl;
+
+//    Note: not calling movePoints since this will undo our manipulations!
+//    polyPatch::movePoints(pBufs, p);
+/*
+    polyPatch::movePoints
+     -> primitivePatch::movePoints
+        -> primitivePatch::clearGeom:
+    deleteDemandDrivenData(localPointsPtr_);
+    deleteDemandDrivenData(faceCentresPtr_);
+    deleteDemandDrivenData(faceAreasPtr_);
+    deleteDemandDrivenData(magFaceAreasPtr_);
+    deleteDemandDrivenData(faceNormalsPtr_);
+    deleteDemandDrivenData(pointNormalsPtr_);
+*/
 }
 
 
@@ -1066,13 +1057,16 @@ Foam::phaseLagAMIPolyPatch::phaseLagAMIPolyPatch
     coupledPolyPatch(name, size, start, index, bm, patchType, transform),
     periodicPatchName_(word::null),
     periodicPatchID_(-1),
-    HBZoneName_(),
-    subTimeLevel_(0),
-    IBPA_(),
-    cylCoords_(false),
-    nTransformsFwd_(0),
-    nTransformsBwd_(0),
+	HBZoneName_(),
+	subTimeLevel_(0),
+	IBPA_(),
+	cylCoords_(false),
+	nTransformsFwd_(0),
+	nTransformsBwd_(0),
     nTransforms_(0),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(size),
+	expandedPoints_(size),
     nSectors_(0),
     maxIter_(36),
     nbrPatchName_(word::null),
@@ -1099,13 +1093,16 @@ Foam::phaseLagAMIPolyPatch::phaseLagAMIPolyPatch
     coupledPolyPatch(name, dict, index, bm, patchType),
     periodicPatchName_(dict.lookup("periodicPatch")),
     periodicPatchID_(-1),
-    HBZoneName_(dict.lookup("HBZoneName")),
-    subTimeLevel_(0),
-    IBPA_(dict.getOrDefault<scalar>("IBPA", 0)),
-    cylCoords_(dict.get<bool>("cylCoords")),
-    nTransformsFwd_(0),
-    nTransformsBwd_(0),
+	HBZoneName_(dict.lookup("HBZoneName")),
+	subTimeLevel_(0),
+	IBPA_(dict.getOrDefault<scalar>("IBPA", 0)),
+	cylCoords_(dict.get<bool>("cylCoords")),
+	nTransformsFwd_(0),
+	nTransformsBwd_(0),
     nTransforms_(0),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(localFaces().size()),
+	expandedPoints_(localPoints().size()),
     nSectors_(dict.getOrDefault<label>("nSectors", 0)),
     maxIter_(dict.getOrDefault<label>("maxIter", 36)),
     nbrPatchName_(dict.getOrDefault<word>("neighbourPatch", word::null)),
@@ -1152,13 +1149,16 @@ Foam::phaseLagAMIPolyPatch::phaseLagAMIPolyPatch
     coupledPolyPatch(pp, bm),
     periodicPatchName_(pp.periodicPatchName_),
     periodicPatchID_(-1),
-    HBZoneName_(pp.HBZoneName_),
-    subTimeLevel_(pp.subTimeLevel_),
-    IBPA_(pp.IBPA_),
-    cylCoords_(pp.cylCoords_),
-    nTransformsFwd_(0),
-    nTransformsBwd_(0),
+	HBZoneName_(pp.HBZoneName_),
+	subTimeLevel_(pp.subTimeLevel_),
+	IBPA_(pp.IBPA_),
+	cylCoords_(pp.cylCoords_),
+	nTransformsFwd_(0),
+	nTransformsBwd_(0),
     nTransforms_(0),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(pp.expandedFaces_),
+	expandedPoints_(pp.expandedPoints_),
     nSectors_(pp.nSectors_),
     maxIter_(pp.maxIter_),
     nbrPatchName_(pp.nbrPatchName_),
@@ -1186,13 +1186,16 @@ Foam::phaseLagAMIPolyPatch::phaseLagAMIPolyPatch
     coupledPolyPatch(pp, bm, index, newSize, newStart),
     periodicPatchName_(pp.periodicPatchName_),
     periodicPatchID_(-1),
-    HBZoneName_(pp.HBZoneName_),
-    subTimeLevel_(pp.subTimeLevel_),
-    IBPA_(pp.IBPA_),
-    cylCoords_(pp.cylCoords_),
-    nTransformsFwd_(0),
-    nTransformsBwd_(0),
+	HBZoneName_(pp.HBZoneName_),
+	subTimeLevel_(pp.subTimeLevel_),
+	IBPA_(pp.IBPA_),
+	cylCoords_(pp.cylCoords_),
+	nTransformsFwd_(0),
+	nTransformsBwd_(0),
     nTransforms_(0),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(pp.expandedFaces_),
+	expandedPoints_(pp.expandedPoints_),
     nSectors_(pp.nSectors_),
     maxIter_(pp.maxIter_),
     nbrPatchName_(nbrPatchName),
@@ -1227,13 +1230,16 @@ Foam::phaseLagAMIPolyPatch::phaseLagAMIPolyPatch
     coupledPolyPatch(pp, bm, index, mapAddressing, newStart),
     periodicPatchName_(pp.periodicPatchName_),
     periodicPatchID_(-1),
-    HBZoneName_(pp.HBZoneName_),
-    subTimeLevel_(pp.subTimeLevel_),
-    IBPA_(pp.IBPA_),
-    cylCoords_(pp.cylCoords_),
-    nTransformsFwd_(0),
-    nTransformsBwd_(0),
+	HBZoneName_(pp.HBZoneName_),
+	subTimeLevel_(pp.subTimeLevel_),
+	IBPA_(pp.IBPA_),
+	cylCoords_(pp.cylCoords_),
+	nTransformsFwd_(0),
+	nTransformsBwd_(0),
     nTransforms_(0),
+	expandedPatchPtr_(nullptr),
+	expandedFaces_(pp.expandedFaces_),
+	expandedPoints_(pp.expandedPoints_),
     nSectors_(pp.nSectors_),
     maxIter_(pp.maxIter_),
     nbrPatchName_(pp.nbrPatchName_),
@@ -1360,6 +1366,65 @@ bool Foam::phaseLagAMIPolyPatch::applyLowWeightCorrection() const
 }
 
 
+Foam::scalar Foam::phaseLagAMIPolyPatch::timeLag(bool fwd) const
+{
+	const objectRegistry& allSubLevels = this->boundaryMesh().mesh().parent();
+  	const objectRegistry& subLevel0 = allSubLevels.lookupObject<objectRegistry>("subTimeLevel0");
+	const HBZoneList& HB = subLevel0.lookupObject<IOHBZoneList>("HBProperties");
+
+	scalar IBPA = 0.0;
+	label HBZoneInstance = -1;
+
+	if (fwd)
+	{
+		if (IBPA_ > 0)
+		{
+			IBPA = IBPA_;
+		}
+		else
+		{
+			IBPA = 2*constant::mathematical::pi + IBPA_;
+		}
+	}
+	else
+	{
+		if (IBPA_ > 0)
+		{
+			IBPA = 2*constant::mathematical::pi - IBPA_;
+		}
+		else
+		{
+			IBPA = - IBPA_;
+		}
+	}
+
+	forAll (HB, i)
+	{
+		if (HB[i].name() == HBZoneName_)
+		{
+			HBZoneInstance = i;
+		}
+	}
+
+	if (IBPA < 0)
+	{
+	    FatalErrorInFunction
+	        << "Negative time lag obtained."
+	        << abort(FatalError);
+	}
+
+	if (!HB[HBZoneInstance].active())
+	{
+		return 0.0;
+	}
+
+	const scalar& omega = HB[HBZoneInstance].omegaList()[1];
+
+	return IBPA/omega;
+
+}
+
+
 void Foam::phaseLagAMIPolyPatch::transformPosition(pointField& l) const
 {}
 
@@ -1419,7 +1484,7 @@ void Foam::phaseLagAMIPolyPatch::revTransformPositionPatch
     {
         // transformPosition gets called on the receiving side,
         // separation gets calculated on the sending side so subtract
-    	// here. We add since it is the reverse transform
+    	// here we add since it is the reverse transform
 
         const vectorField& s = perioPatch.separation();
         if (s.size() == 1)
@@ -1495,8 +1560,8 @@ Foam::label Foam::phaseLagAMIPolyPatch::pointFace
     {
         nbrFacei = AMI().tgtPointFace
         (
-            *this,
-            neighbPatch(),
+			expandedPatchPtr_(),
+			neighbPatch().expandedPatchPtr_(),
             nrt,
             facei,
             prt
@@ -1506,8 +1571,8 @@ Foam::label Foam::phaseLagAMIPolyPatch::pointFace
     {
         nbrFacei = neighbPatch().AMI().srcPointFace
         (
-            neighbPatch(),
-            *this,
+			neighbPatch().expandedPatchPtr_(),
+			expandedPatchPtr_(),
             nrt,
             facei,
             prt

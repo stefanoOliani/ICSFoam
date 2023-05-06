@@ -1,11 +1,12 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Hrvoje Jasak, Wikki Ltd.  All rights reserved
+    Fethi Tekin, All rights reserved.
+    Oliver Borm, All rights reserved.
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +24,16 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::overlapAMIPolyPatch
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+    Adapted from overlapGGI patch implemented in foam-extend by Hrvoje Jasak, 
+    Fethi Tekin and Oliver Borm
+
+SourceFiles
+    overlapAMIPolyPatch.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef overlapAMIPolyPatch_H
@@ -55,14 +62,17 @@ class overlapAMIPolyPatch
 {
     // Private data
 
- 	 //- Rotation axis
-	const vector rotationAxis_;
+	 	 //- Rotation axis
+		const vector rotationAxis_;
 
-	// Number of copies in order to complete 360 degrees
-	const label nCopies_;
+		// Number of copies in order to complete 360 degrees
+		const label nCopies_;
 
-	// Pointer to expanded patch
-	mutable autoPtr<primitivePatch> expandedPatchPtr_;
+		// Pointer to expanded patch
+		mutable autoPtr<primitivePatch> expandedPatchPtr_;
+
+		mutable faceList expandedFaces_;
+		mutable pointField expandedPoints_;
 
     // Private Member Functions
 
@@ -261,11 +271,11 @@ public:
 
             inline const vector& rotationAxis() const;
 
-            //- Return wedge angle
-	    inline scalar angle() const;
+			//- Return wedge angle
+			inline scalar angle() const;
 
-	    //- Return number of slave copies
-	    inline const label& nCopies() const;
+			//- Return number of slave copies
+			inline const label& nCopies() const;
 
             //- Neighbour patch name
             inline const word& neighbPatchName() const;
@@ -281,6 +291,9 @@ public:
 
             //- Return a reference to the AMI interpolator
             const AMIPatchToPatchInterpolation& AMI() const;
+
+            //- Return a reference to the expanded patch
+			const primitivePatch& expandedPatch() const;
 
             //- Helper function to return the weights
             inline const scalarListList& weights() const;

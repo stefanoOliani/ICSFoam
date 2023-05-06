@@ -107,6 +107,8 @@ forAll(pThermoHB,i)
 	    psiThermo::New(subTimeMeshes[i])
 	);
 
+	psiThermo& thermoHB = PThermo();
+
 	pThermoHB.set
 	(
 		i,
@@ -130,7 +132,7 @@ forAll(UHB,i)
 	            runTime.timeName(),
 				subTimeMeshes[i],
 	            IOobject::MUST_READ,
-	            IOobject::NO_WRITE
+	            IOobject::AUTO_WRITE
 	        ),
 			subTimeMeshes[i]
 	    )
@@ -147,7 +149,7 @@ forAll(UHB,i)
 				runTime.timeName(),
 				subTimeMeshes[i],
 				IOobject::MUST_READ,
-				IOobject::NO_WRITE
+				IOobject::AUTO_WRITE
 			),
 			subTimeMeshes[i]
 		)
@@ -164,7 +166,7 @@ forAll(UHB,i)
 				runTime.timeName(),
 				subTimeMeshes[i],
 				IOobject::MUST_READ,
-				IOobject::NO_WRITE
+				IOobject::AUTO_WRITE
 			),
 			subTimeMeshes[i]
 		)
@@ -181,7 +183,7 @@ forAll(UHB,i)
 				runTime.timeName(),
 				subTimeMeshes[i],
 				IOobject::MUST_READ,
-				IOobject::NO_WRITE
+				IOobject::AUTO_WRITE
 			),
 			subTimeMeshes[i]
 		)

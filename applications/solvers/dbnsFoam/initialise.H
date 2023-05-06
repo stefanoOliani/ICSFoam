@@ -1,5 +1,6 @@
    // Detect steady-state analysis
-    const dictionary& ddtControls = mesh.schemesDict().subDict("ddtSchemes");
+    const dictionary& ddtControls =
+    		mesh.schemesDict().subDict("ddtSchemes");
 
     wordList ddtToc (ddtControls.toc());
 
@@ -35,7 +36,11 @@
         solnControl.setCorr(runTime.startTimeIndex());
     }
 
-    bool localTimestepping = solnControl.dict().lookupOrDefault<Switch>("localTimestepping",true);
+    bool localTimestepping = solnControl.dict().lookupOrDefault<Switch>
+							(
+								"localTimestepping",
+								true
+							);
 
     bool localTimesteppingBounding(false);
     scalar localTimesteppingLowerBound = 0.0;
@@ -71,6 +76,7 @@
 
     #include "createFields.H"
 
+    // Read or initialise pseudo Co number
     if (!localTimestepping)
     {
         Info << "Initial pseudo Courant No: " << pseudoCoNum.value() << nl << endl;

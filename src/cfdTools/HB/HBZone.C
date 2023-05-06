@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "HBZone.H"
@@ -240,6 +233,8 @@ Foam::scalar Foam::HBZone::calcConditionN(const scalarList& snapshots)
 			}
 		}
 	}
+
+	//Info<<"E_1Mult "<<E_1Mult<<endl;
 
 	//- Now we compute the SVD of matrix E_1 resorting to
 	//  the corresponding eigenvalue problem E_1E_1*
@@ -755,6 +750,7 @@ void Foam::HBZone::addSource
     }
 }
 
+
 void Foam::HBZone::factorizationStep
 (
 	PtrList<PtrList<volScalarField>>& scalarVarsIncr,
@@ -904,6 +900,156 @@ void Foam::HBZone::factorizationStep
         		}
     		}
     	}
+    }
+}
+
+
+void Foam::HBZone::reconstruct
+(
+	volVectorField& reconstrFld,
+	PtrList<volVectorField>& fieldPtr,
+	scalar actTime,
+	bool tryCylCoords
+) const
+{
+	const label nO = fieldPtr.size(); //number of snapshots
+	const label nT = omegaList_.size(); //number of frequencies
+
+	List<complex> E_1(nT);
+	complex e(0,1);
+
+	forAll (omegaList_, k)
+	{
+		e.Re() = Foam::cos(omegaList_[k]*actTime);
+		e.Im() = Foam::sin(omegaList_[k]*actTime);
+		E_1[k] = e;
+	}
+
+	complex t(0,0);
+	List<complex> transfOp(nO, t);
+
+	for (label m=0; m<nO; m++)
+	{
+		for (label n=0; n<nT; n++)
+		{
+			transfOp[m] += E_1[n]*E_[n][m];
+		}
+	}
+
+	scalarList transfOpRe(nO, 0.0);
+
+	forAll(transfOpRe, J)
+	{
+		transfOpRe[J] = transfOp[J].Re();
+	}
+
+    if (cellZoneID_ == -1)
+    {
+        return;
+    }
+
+    if (cylCoords_)
+    {
+    	dimensionedScalar smallRadius("smallRadius", dimLength, SMALL);
+
+        if (cellZoneID_ == -2)
+        {
+        	label cellNo = mesh_.nCells();
+
+        	vector axisHat = rotationAxis_/mag(rotationAxis_);
+
+        	for (Foam::label celli=0; celli<cellNo; ++celli)
+        	{
+        		reconstrFld[celli] = Zero;
+        		vector reconstrCyl(Zero);
+
+        		for (label l=0; l<nO; l++)
+        		{
+					const fvMesh& meshL = fieldPtr[l].mesh();
+
+					const vector& cellCentre = meshL.C()[celli];
+
+					 // Radius vector in plane of rotation
+					vector r(cellCentre - rotationCentre_);
+					r -= (axisHat & r)*axisHat;
+					const scalar magr(mag(r));
+					const vector rHat(r/magr);
+
+					scalar Ur = fieldPtr[l][celli] & rHat;
+					scalar Uu = fieldPtr[l][celli] & (axisHat ^ rHat);
+					scalar Uz = fieldPtr[l][celli] & axisHat;
+
+        			vector UCyl(Ur, Uu, Uz);
+        			reconstrCyl += transfOpRe[l]*UCyl;
+        		}
+
+				const vector& cellCentreAct = reconstrFld.mesh().C()[celli];
+
+				// Radius vector in plane of rotation
+				vector r(cellCentreAct - rotationCentre_);
+				r -= (axisHat & r)*axisHat;
+				const scalar magr(mag(r));
+				const vector rHat(r/magr);
+
+				vector reconstrCart = reconstrCyl.x()*rHat
+								  + reconstrCyl.y()*(axisHat^rHat)
+								  + reconstrCyl.z()*axisHat;
+
+				reconstrFld[celli] = reconstrCart;
+        	}
+        }
+        else
+        {
+        	const labelList& cells = mesh_.cellZones()[cellZoneID_];
+
+        	vector axisHat = rotationAxis_/mag(rotationAxis_);
+
+        	forAll (cells, i)
+        	{
+    			label celli = cells[i];
+
+        		reconstrFld[celli] = Zero;
+        		vector reconstrCyl(Zero);
+
+				for (label l=0; l<nO; l++)
+				{
+					const fvMesh& meshL = fieldPtr[l].mesh();
+
+					const vector& cellCentre = meshL.C()[celli];
+
+					 // Radius vector in plane of rotation
+					vector r(cellCentre - rotationCentre_);
+					r -= (axisHat & r)*axisHat;
+					const scalar magr(mag(r));
+					const vector rHat(r/magr);
+
+					scalar Ur = fieldPtr[l][celli] & rHat;
+					scalar Uu = fieldPtr[l][celli] & (axisHat ^ rHat);
+					scalar Uz = fieldPtr[l][celli] & axisHat;
+
+					vector UCyl(Ur, Uu, Uz);
+					reconstrCyl += transfOpRe[l]*UCyl;
+				}
+
+				const vector& cellCentreAct = reconstrFld.mesh().C()[celli];
+
+				// Radius vector in plane of rotation
+				vector r(cellCentreAct - rotationCentre_);
+				r -= (axisHat & r)*axisHat;
+				const scalar magr(mag(r));
+				const vector rHat(r/magr);
+
+				vector reconstrCart = reconstrCyl.x()*rHat
+								  + reconstrCyl.y()*(axisHat^rHat)
+								  + reconstrCyl.z()*axisHat;
+
+				reconstrFld[celli] = reconstrCart;
+        	}
+        }
+    }
+    else
+    {
+    	reconstruct(reconstrFld, fieldPtr, actTime);
     }
 }
 

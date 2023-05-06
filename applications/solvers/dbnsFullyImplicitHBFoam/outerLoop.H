@@ -83,7 +83,7 @@ PtrList<volVectorField> vectorVarsPrevIter(nO);
 
 forAll(vectorVarsGlob, i)
 {
-    scalarVarsPrevIter.set(2*i, new volScalarField(scalarVarsGlob[i][0].name() + "PrevIter", scalarVarsGlob[i][0]));
+	scalarVarsPrevIter.set(2*i, new volScalarField(scalarVarsGlob[i][0].name() + "PrevIter", scalarVarsGlob[i][0]));
     vectorVarsPrevIter.set(i, new volVectorField(vectorVarsGlob[i][0].name() + "PrevIter", vectorVarsGlob[i][0]));
     scalarVarsPrevIter.set(2*i+1, new volScalarField(scalarVarsGlob[i][1].name() + "PrevIter", scalarVarsGlob[i][1]));
 }

@@ -1,11 +1,12 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Hrvoje Jasak, Wikki Ltd.  All rights reserved
+    Fethi Tekin, All rights reserved.
+    Oliver Borm, All rights reserved.
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +24,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -63,15 +60,15 @@ Foam::overlapAMIPolyPatch::expandData(const Field<Type>& pf) const
     for (label copyI = 0; copyI < ncp; copyI++)
     {
     	// Calculate transform
-	const tensor curRotation = this->RodriguesRotation(rotationAxis_, copyI*myAngle);
+		const tensor curRotation = this->RodriguesRotation(rotationAxis_, copyI*myAngle);
 
-	const label offset = copyI*pf.size();
+		const label offset = copyI*pf.size();
 
-	forAll (pf, faceI)
-	{
-		 const label zId = this->whichFace(this->start() + faceI);
-		 expandField[offset + zId] = Foam::transform(curRotation, pf[faceI]);
-	}
+		forAll (pf, faceI)
+		{
+			 const label zId = this->whichFace(this->start() + faceI);
+			 expandField[offset + zId] = Foam::transform(curRotation, pf[faceI]);
+		}
     }
 
     return texpandField;
@@ -112,15 +109,15 @@ Foam::overlapAMIPolyPatch::expandData(const Field<Type>& pf, label cmpt) const
     for (label copyI = 0; copyI < ncp; copyI++)
     {
     	// Calculate transform
-	const tensor curRotation = this->RodriguesRotation(rotationAxis_, copyI*myAngle);
+		const tensor curRotation = this->RodriguesRotation(rotationAxis_, copyI*myAngle);
 
-	const label offset = copyI*pf.size();
+		const label offset = copyI*pf.size();
 
-	forAll (pf, faceI)
-	{
-		 const label zId = this->whichFace(this->start() + faceI);
-		 expandField[offset + zId] = Foam::transform(curRotation, pf[faceI]);
-	}
+		forAll (pf, faceI)
+		{
+			 const label zId = this->whichFace(this->start() + faceI);
+			 expandField[offset + zId] = Foam::transform(curRotation, pf[faceI]);
+		}
     }
 
     return texpandField;
@@ -289,12 +286,12 @@ void Foam::overlapAMIPolyPatch::interpolate
     const UList<Type>& defaultValues
 ) const
 {
-    // Expand data
-    tmp<Field<Type> > expandDataTmp = neighbPatch().expandData(fld);
-    
-    Field<Type>& expandData = expandDataTmp.ref();
-    
-    UList<Type> expandDefault = neighbPatch().expandData(defaultValues);
+	// Expand data
+	tmp<Field<Type> > expandDataTmp = neighbPatch().expandData(fld);
+
+	Field<Type>& expandData = expandDataTmp.ref();
+
+	UList<Type> expandDefault = neighbPatch().expandData(defaultValues);
 
     if (owner())
     {
@@ -303,24 +300,24 @@ void Foam::overlapAMIPolyPatch::interpolate
             expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
     else
     {
         neighbPatch().AMI().interpolateToTarget
         (
-            expandData,
+        	expandData,
             cop,
             result,
-            expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
 }
 
@@ -333,14 +330,14 @@ Foam::tmp<Foam::Field<Type>> Foam::overlapAMIPolyPatch::interpolate
     const UList<Type>& defaultValues
 ) const
 {
-    // Expand data
-    tmp<Field<Type> > expandDataTmp = neighbPatch().expandData(fld, cmpt);
-    Field<Type>& expandData = expandDataTmp.ref();
-    
-    UList<Type>  expandDefault = neighbPatch().expandData(defaultValues);
-    
-    tmp<Field<Type> > tresult(new Field<Type>());
-    Field<Type>& result = tresult.ref();
+	// Expand data
+	tmp<Field<Type> > expandDataTmp = neighbPatch().expandData(fld, cmpt);
+	Field<Type>& expandData = expandDataTmp.ref();
+
+	UList<Type>  expandDefault = neighbPatch().expandData(defaultValues);
+
+	tmp<Field<Type> > tresult(new Field<Type>());
+	Field<Type>& result = tresult.ref();
 
     if (owner())
     {
@@ -365,7 +362,7 @@ template<class Type>
 Foam::tmp<Foam::Field<Type>> Foam::overlapAMIPolyPatch::interpolate
 (
     const tmp<Field<Type>>& tFld,
-    label cmpt,
+	label cmpt,
     const UList<Type>& defaultValues
 ) const
 {
@@ -397,24 +394,24 @@ void Foam::overlapAMIPolyPatch::interpolate
             expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
     else
     {
         neighbPatch().AMI().interpolateToTarget
         (
-            expandData,
+        	expandData,
             cop,
             result,
-            expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
 }
 
@@ -488,24 +485,24 @@ void Foam::overlapAMIPolyPatch::untransfInterp
             expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
     else
     {
         neighbPatch().AMI().interpolateToTarget
         (
-            expandData,
+        	expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
 }
 

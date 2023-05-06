@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,15 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::phaseLagAMIPolyPatch
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+	No topology change, only rotational transform
+
+SourceFiles
+    phaseLagAMIPolyPatch.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef phaseLagAMIPolyPatch_H
@@ -75,6 +77,12 @@ class phaseLagAMIPolyPatch
         mutable label nTransformsFwd_;
         mutable label nTransformsBwd_;
         mutable label nTransforms_;
+
+		// Pointer to expanded patch
+		mutable autoPtr<primitivePatch> expandedPatchPtr_;
+
+		mutable faceList expandedFaces_;
+		mutable pointField expandedPoints_;
 
         //- Number of sectors in a rotationally periodic geometry (optional)
         const label nSectors_;
@@ -267,8 +275,20 @@ public:
 
         // Access
 
-	    //- Periodic patch ID
-            virtual label periodicPatchID() const;
+			//- Periodic patch ID
+			virtual label periodicPatchID() const;
+
+	        //- Axis of rotation for rotational phaseLagCyclics
+	        const scalar& IBPA() const
+	        {
+	            return IBPA_;
+	        }
+
+	        //- Harmonic balance zone for phaseLagCyclics
+	        const word& HBZoneName() const
+	        {
+	            return HBZoneName_;
+	        }
 
             //- Tolerance used e.g. for area calculations/limits
             static const scalar tolerance_;
@@ -287,9 +307,11 @@ public:
             inline const word& neighbPatchName() const;
 
             //- Neighbour patch name
-	    inline label& nTransformsFwd() const;
-	    inline label& nTransformsBwd() const;
-	    inline label& nTransforms() const;
+			inline label& nTransformsFwd() const;
+
+			inline label& nTransformsBwd() const;
+
+			inline label& nTransforms() const;
 
             //- Neighbour patch ID
             virtual label neighbPatchID() const;
@@ -311,6 +333,9 @@ public:
 
             //- Return true if applying the low weight correction
             bool applyLowWeightCorrection() const;
+
+            //- Retrieve the time lag between the two sides
+            scalar timeLag(bool fwd) const;
 
 
             // Transformations
@@ -340,24 +365,24 @@ public:
                 ) const;
 
                 //- Transform patch-based positions from nbr side to this side
-		void revTransformPositionPatch
-		(
-			pointField& l,
-			const coupledPolyPatch& perioPatch
-		) const;
+				void revTransformPositionPatch
+				(
+					pointField& l,
+					const coupledPolyPatch& perioPatch
+				) const;
 
 
             // Interpolations
 
                 //- Expand face field for 360 degrees coverage
-		template<class Type>
-		tmp<Field<Type> > expandData(const Field<Type>& spf) const;
+				template<class Type>
+				tmp<Field<Type> > expandData(const Field<Type>& spf) const;
 
-		template<class Type>
-		tmp<Field<Type> > expandData(const Field<Type>& spf, const word& fieldName) const;
+				template<class Type>
+				tmp<Field<Type> > expandData(const Field<Type>& spf, const word& fieldName) const;
 
-		template<class Type>
-		UList<Type> expandData(const UList<Type>& defValues) const;
+				template<class Type>
+				UList<Type> expandData(const UList<Type>& defValues) const;
 
                 //- Interpolate field
                 template<class Type>

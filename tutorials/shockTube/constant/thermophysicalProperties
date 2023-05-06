@@ -38,6 +38,7 @@ mixture
     {
         Cp              1004.5;
         Hf              2.544e+06;
+	Tref		0;
     }
     transport
     {

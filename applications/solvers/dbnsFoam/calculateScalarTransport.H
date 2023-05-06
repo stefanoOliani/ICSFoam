@@ -1,3 +1,5 @@
+// Store previous iteration values. Don't use storePrevIter here as it
+// introduces too many problems for mesh refinement/redistribution
 PtrList<volScalarField> scalarVarsPrevIterScalarTransp(1);
 PtrList<volVectorField> dummyVectorVarsPrevIter(0);
 
@@ -79,7 +81,7 @@ tmp< surfaceScalarField > magU_r = U_r & n;
 
 // Roe averages
 dimensionedScalar rho0("rho0",dimDensity,VSMALL);
-tmp< surfaceScalarField > coefR = sqrt(max(rho0,rho_r())/max(rho0,rho_l()));  
+tmp< surfaceScalarField > coefR = sqrt(max(rho0,rho_r())/max(rho0,rho_l()));  // CHECK: Is this form of coefR correct?
 
 surfaceVectorField RoeVelocity = (coefR()*U_r + U_l)/(coefR() + 1.0);
 surfaceScalarField  uProjRoe = RoeVelocity & n;
@@ -87,9 +89,11 @@ surfaceScalarField  uProjRoe = RoeVelocity & n;
 if (mesh.moving())
 {
 	surfaceScalarField meshVelocity = fvc::meshPhi(U)()/mesh.magSf();
+
 	uProjRoe -= meshVelocity;
 }
 
+//MRFFaceVelocity.setOriented(false);
 uProjRoe -= MRFFaceVelocity;
 
 surfaceScalarField Lambda = mag(uProjRoe);
@@ -175,6 +179,14 @@ if (!inviscid)
 
 // Pseudo and real-time contribution
 tmp<fvScalarMatrix> ddtRhoS = fvm::ddt(rhoS);
+
+if (mesh.foundObject<volScalarField>("ddt0(rhoS)"))
+{
+	const_cast<volScalarField&>
+	(
+		mesh.lookupObject<volScalarField>("ddt0(rhoS)")
+	).timeIndex() = mesh.time().timeIndex();
+}
 
 if (!steadyState)
 {
@@ -320,6 +332,7 @@ if (!inviscid)
 }
 
 // Add temporal terms
+// Temporal contribution (Weak form)
 scalarField ddtCoeff(mesh.V().size());
 
 ddtCoeff = fvm::ddt(rhoS)->diag();

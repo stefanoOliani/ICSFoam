@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,15 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
+Class
+    Foam::HBZoneList
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
+Description
+    List container for HB zones
+
+SourceFiles
+    HBZoneList.C
+
 \*---------------------------------------------------------------------------*/
 
 #ifndef HBZoneList_H
@@ -191,6 +193,14 @@ public:
         	GeometricField<Type, fvPatchField, volMesh>& reconstFld,
 			PtrList<GeometricField<Type, fvPatchField, volMesh>>& fieldPtr,
 			scalar actTime
+        ) const;
+
+        void reconstruct
+        (
+        	volVectorField& reconstFld,
+			PtrList<volVectorField>& fieldPtr,
+			scalar actTime,
+			bool testCylCoord
         ) const;
 
         // I-O

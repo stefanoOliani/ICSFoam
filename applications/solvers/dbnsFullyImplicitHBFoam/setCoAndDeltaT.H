@@ -1,6 +1,5 @@
 volVectorField& U_ = U[K];
 
-// Switched Evolution Relaxation
 if (initRes.valid())
 {
 	if (!solnControl[K].firstIter() && prevRes.valid())
@@ -72,6 +71,7 @@ forAll(frdt.boundaryField(), patchi)
 
 		forAll(fc, bfacei)
 		{
+
 			scalar pLambda;
 
 			if (mesh.moving())
@@ -99,7 +99,7 @@ forAll(frdt.boundaryField(), patchi)
 			rPseudoDeltaT[K][fc[bfacei]] =
 				max
 				(
-					rPseudoDeltaT[K][fc[bfacei]], // Cell value based on max of internal neighbours
+					rPseudoDeltaT[K][fc[bfacei]],
 					pLambda
 				);
 		}

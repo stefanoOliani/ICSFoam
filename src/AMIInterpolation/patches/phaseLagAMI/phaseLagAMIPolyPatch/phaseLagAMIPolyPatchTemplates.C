@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "IOHBZoneList.H"
@@ -95,6 +88,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const Field<Type>& pf) const
 
 		 expandField.append(transfField);
     }
+
 
     return texpandField;
 }
@@ -167,7 +161,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const Field<Type>& pf, const word& fieldN
 				perioFields.set
 				(
 					i,
-					subTimeInternali
+					new Field<Type>(subTimeInternali)
 				);
 			}
 			else
@@ -178,7 +172,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const Field<Type>& pf, const word& fieldN
 				perioFields.set
 				(
 					i,
-					subTimeInternali
+					new Field<Type>(subTimeInternali)
 				);
 			}
 		}
@@ -189,7 +183,7 @@ Foam::phaseLagAMIPolyPatch::expandData(const Field<Type>& pf, const word& fieldN
 			perioFields.set
 			(
 				i,
-				subTimeInternali
+				new Field<Type>(subTimeInternali)
 			);
 		}
 
@@ -502,24 +496,24 @@ void Foam::phaseLagAMIPolyPatch::interpolate
             expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
     else
     {
         neighbPatch().AMI().interpolateToTarget
         (
-            expandData,
+        	expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
 }
 
@@ -593,24 +587,24 @@ void Foam::phaseLagAMIPolyPatch::interpolate
             expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
     else
     {
         neighbPatch().AMI().interpolateToTarget
         (
-            expandData,
+        	expandData,
             cop,
             result,
-	    expandDefault
+			expandDefault
         );
 
         // Truncate to size
-	result.setSize(this->size());
+		result.setSize(this->size());
     }
 }
 

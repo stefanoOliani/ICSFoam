@@ -1,32 +1,25 @@
 /*---------------------------------------------------------------------------*\
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
+    Copyright (C) 2004-2011 OpenCFD Ltd.
+    Copyright (C) 2022 Stefano Oliani
 
 -------------------------------------------------------------------------------
 License
-    This file is part of ICSFOAM.
+    This file is part of ICSFoam.
 
-    ICSFOAM is free software: you can redistribute it and/or modify it
+    ICSFoam is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    ICSFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ICSFoam is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with ICSFoam.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -56,20 +49,21 @@ int main(int argc, char *argv[])
         "Transient db solver for compressible turbulent flow.\n"
     );
 
-    #include "addCheckCaseOptions.H"
-    #include "setRootCaseLists.H"
-    #include "createTime.H"
-    #include "createMeshes.H"
-    
-    #include "initialise.H"
-    
-    #include "updateMeshes.H"
+
+	#include "addCheckCaseOptions.H"
+	#include "setRootCaseLists.H"
+	#include "createTime.H"
+	#include "createMeshes.H"
+
+	#include "initialise.H"
+
+	#include "updateMeshes.H"
 
     if (!inviscid)
     {
     	forAll(subTimeMeshes,K)
     	{
-            turbulence[K].validate();
+			turbulence[K].validate();
     	}
     }
 
@@ -83,22 +77,22 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-	bool notFinished(false);
+		bool notFinished(false);
 
-	forAll(subTimeMeshes,K)
-	{
-		if (solnControl[K].loop())
+		forAll(subTimeMeshes,K)
 		{
-			notFinished = true;
+			if (solnControl[K].loop())
+			{
+				notFinished = true;
+			}
 		}
-	}
 
-	#include "outerLoop.H"
+		#include "outerLoop.H"
 
-	if (scalarTransport)
-	{
-            #include "calculateScalarTransport.H"
-	}
+		if (scalarTransport)
+		{
+			#include "calculateScalarTransport.H"
+		}
 
         if (!notFinished)
         {

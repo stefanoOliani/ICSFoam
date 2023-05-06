@@ -174,7 +174,6 @@ convectiveFluxScheme& flux = pFlux();
 Info<< "Creating viscous flux scheme\n" << endl;
 viscousFluxScheme viscousFlux(mesh.schemesDict(), thermo, rho, U, p, turbulence);
 
-
 volScalarField rPseudoDeltaT
 (
 	IOobject
@@ -196,6 +195,8 @@ autoPtr<volTensorField> pTauMC(nullptr);
 
 if (!inviscid)
 {
+    // tauMC is stored for the benefit of the maxwellSlip BC - maybe better
+    // to modify the BC to recalculate it rather
     pTauMC.set
     (
         new volTensorField
@@ -212,6 +213,7 @@ if (!inviscid)
         )
     );
 }
+
 
 volScalarField pseudoCoField
 (

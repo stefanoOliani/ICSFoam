@@ -1,11 +1,11 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
+    Copyright (C) 2014-2018 Oliver Oxtoby - CSIR, South Africa
+    Copyright (C) 2014-2018 Johan Heyns - CSIR, South Africa
 
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -24,9 +24,6 @@ License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -115,12 +112,6 @@ tmp<blockFvMatrix<vector,vector>> grad
 
 		if (patch.coupled())
 		{
-//			vectorField& pcoupleUpper = bs.interfacesUpper()[patchI];
-//			vectorField& pcoupleLower = bs.interfacesLower()[patchI];
-
-			// Coupling  contributions
-//			pcoupleLower -= pcl;
-//			pcoupleUpper -= pcu;
 		}
 		else
 		{
@@ -210,15 +201,6 @@ tmp<blockFvMatrix<scalar,vector>> div
 
 		if (patch.coupled())
 		{
-//			vectorField& pcoupleUpper = bs.interfacesUpper()[patchI];
-//			vectorField& pcoupleLower = bs.interfacesLower()[patchI];
-//
-//			const vectorField pcl = -pw*pSf;
-//			const vectorField pcu = pcl + pSf;
-//
-//			// Coupling  contributions
-//			pcoupleLower -= pcl;
-//			pcoupleUpper -= pcu;
 		}
 		else
 		{

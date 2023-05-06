@@ -1,11 +1,8 @@
 /*---------------------------------------------------------------------------*\
+    Copyright (C) 2011-2013 OpenFOAM Foundation
+    Copyright (C) 2019 OpenCFD Ltd.
 
-    ICSFoam: a library for Implicit Coupled Simulations in OpenFOAM
-  
-    Copyright (C) 2022  Stefano Oliani
-
-    https://turbofe.it
-
+    Copyright (C) 2022 Stefano Oliani
 -------------------------------------------------------------------------------
 License
     This file is part of ICSFOAM.
@@ -23,10 +20,6 @@ License
     You should have received a copy of the GNU General Public License
     along with ICSFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-
-Author
-    Stefano Oliani
-    Fluid Machinery Research Group, University of Ferrara, Italy
 \*---------------------------------------------------------------------------*/
 
 #include "phaseLagCyclicFvPatchField.H"
@@ -107,6 +100,7 @@ Foam::phaseLagCyclicFvPatchField<Type>::phaseLagCyclicFvPatchField
     {
         this->evaluate(Pstream::commsTypes::blocking);
     }
+
 
     const objectRegistry& allSubLevels = this->db().parent();
 
@@ -208,6 +202,13 @@ Foam::tmp<Foam::Field<Type>> Foam::phaseLagCyclicFvPatchField<Type>::phaseLagged
 		}
 	}
 
+	if (HBZoneInstance == -1)
+	{
+        FatalErrorInFunction
+            << " Specified HBZoneName not found "
+            << exit(FatalIOError);
+	}
+
 	tmp<Field<Type>> tPhaseLag(new Field<Type>(this->patchInternalField()));
 
 	const dictionary& solDict = this->internalField().mesh().solutionDict();
@@ -239,6 +240,7 @@ Foam::tmp<Foam::Field<Type>> Foam::phaseLagCyclicFvPatchField<Type>::phaseLagged
 			if (!subTimeField.boundaryField().operator()(patchIndex)
 				|| !subTimeField.boundaryField().operator()(neighPatchIndex))
 			{
+				Info<<"not correct"<<endl;
 				return tPhaseLag;
 			}
 
@@ -253,10 +255,11 @@ Foam::tmp<Foam::Field<Type>> Foam::phaseLagCyclicFvPatchField<Type>::phaseLagged
 	            subTimeInternali[facei] = iField[nbrFaceCells[facei]];
 	        }
 
+
 			perioFields.set
 			(
 				i,
-				subTimeInternali
+				new Field<Type>(subTimeInternali)
 			);
 		}
 		else
@@ -330,6 +333,17 @@ Foam::tmp<Foam::Field<Type>> Foam::phaseLagCyclicFvPatchField<Type>::phaseLagged
 		}
 	}
 
+    if (this->doTransform())
+    {
+    	forAll(phaseLag, facei)
+		{
+    		phaseLag[facei] = transform
+    		(
+    			this->forwardT()[0], phaseLag[facei]
+    		);
+		}
+    }
+
 	return tPhaseLag;
 }
 
@@ -361,7 +375,6 @@ Foam::phaseLagCyclicFvPatchField<Type>::patchNeighbourField() const
 	}
 	else
 	{
-		//Is it correct to transform the increment fields?
 	    if (this->doTransform())
 	    {
 	        forAll(*this, facei)

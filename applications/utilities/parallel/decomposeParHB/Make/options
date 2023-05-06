@@ -4,9 +4,7 @@ EXE_INC = \
     -I$(LIB_SRC)/dynamicMesh/lnInclude \
     -I$(LIB_SRC)/parallel/decompose/decompose/lnInclude \
     -I$(LIB_SRC)/parallel/decompose/decompositionMethods/lnInclude \
-    -I../../../src/finiteVolume/lnInclude \
-    -I../../../src/meshTools/lnInclude \
-    -I../../../src/OpenFOAM/lnInclude
+    -I../../../src/lnInclude \
 
 EXE_LIBS = \
     -lfiniteVolume \

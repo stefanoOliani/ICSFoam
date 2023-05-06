@@ -1,8 +1,12 @@
 #!/bin/sh
 
+wmake solvers/blockJacobiLinearSolver
 wmake solvers/dbnsFoam
+wmake solvers/dbnsParcelFoam
 wmake solvers/dbnsFullyImplicitHBFoam
+wmake solvers/pUCoupledFoam
 wmake solvers/reconstructHBFoam
+wmake solvers/reconstructParcelHBFoam
 
 cd utilities && { ./Allwmake; cd ..; }
 

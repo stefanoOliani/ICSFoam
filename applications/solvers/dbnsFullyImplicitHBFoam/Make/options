@@ -9,7 +9,7 @@ EXE_INC = \
     -I$(LIB_SRC)/thermophysicalModels/basic/lnInclude \
     -I$(LIB_SRC)/TurbulenceModels/turbulenceModels/lnInclude \
     -I$(LIB_SRC)/TurbulenceModels/compressible/lnInclude \
-    -I../../../src/lnInclude
+    -I../../../src/lnInclude \
 
 EXE_LIBS = \
     -lfiniteVolume \
@@ -25,3 +25,4 @@ EXE_LIBS = \
     -lsampling \
     -L$(FOAM_USER_LIBBIN) \
     -lICSFoam
+

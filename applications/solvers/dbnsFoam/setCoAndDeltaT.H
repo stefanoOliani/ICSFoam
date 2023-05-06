@@ -1,4 +1,5 @@
 // Switched Evolution Relaxation
+
 if (initRes.valid())
 {
 	if (!solnControl.firstIter() && prevRes.valid())
@@ -129,7 +130,7 @@ if (localTimestepping)
 				rPseudoDeltaT[fc[bfacei]] =
 					max
 					(
-						rPseudoDeltaT[fc[bfacei]], // Cell value based on max of internal neighbours
+						rPseudoDeltaT[fc[bfacei]],
 						pLambda
 					);
 			}
@@ -141,7 +142,7 @@ if (localTimestepping)
 }
 else
 {
-	rPseudoDeltaT = max(mesh.deltaCoeffs()*lambda); // Global timestep
+	rPseudoDeltaT = max(mesh.deltaCoeffs()*lambda);
 	rPseudoDeltaT /= pseudoCoNum;
 }
 
