@@ -5,7 +5,6 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2012-2016 OpenFOAM Foundation
     Copyright (C) 2019 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
@@ -26,9 +25,10 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "jumpCyclicAMIFvPatchFields.H"
+#include "calculatedProcessorFvPatchFields.H"
+#include "fvPatchFields.H"
+#include "volMesh.H"
 #include "addToRunTimeSelectionTable.H"
-#include "volFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -37,63 +37,31 @@ namespace Foam
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
-makePatchFieldTypeNames(jumpCyclicAMI);
-
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
-
-template<>
-void Foam::jumpCyclicAMIFvPatchField<scalar>::updateInterfaceMatrix
+defineNamedTemplateTypeNameAndDebug
 (
-    solveScalarField& result,
-    const bool add,
-    const lduAddressing& lduAddr,
-    const label patchId,
-    const solveScalarField& psiInternal,
-    const scalarField& coeffs,
-    const direction cmpt,
-    const Pstream::commsTypes
-) const
-{
-    const labelUList& nbrFaceCells =
-        lduAddr.patchAddr
-        (
-            this->cyclicAMIPatch().neighbPatchID()
-        );
-
-    solveScalarField pnf(psiInternal, nbrFaceCells);
-
-    pnf = this->cyclicAMIPatch().interpolate(pnf);
-
-    // only apply jump to original field
-    if
-    (
-        reinterpret_cast<const void*>(&psiInternal)
-     == reinterpret_cast<const void*>(&this->primitiveField())
-    )
-    {
-        Field<scalar> jf(this->jump());
-
-        if (!this->cyclicAMIPatch().owner())
-        {
-            jf *= -1.0;
-        }
-
-        //pnf -= jf;
-        forAll(pnf, i)
-        {
-            pnf[i] -= jf[i];
-        }
-    }
-
-    // Transform according to the transformation tensors
-    this->transformCoupleField(pnf, cmpt);
-
-    const labelUList& faceCells = lduAddr.patchAddr(patchId);
-
-    // Multiply the field by coefficients and add into the result
-    this->addToInternalField(result, !add, faceCells, coeffs, pnf);
-}
-
+    calculatedProcessorFvPatchScalarField,
+    0
+);
+defineNamedTemplateTypeNameAndDebug
+(
+    calculatedProcessorFvPatchVectorField,
+    0
+);
+defineNamedTemplateTypeNameAndDebug
+(
+    calculatedProcessorFvPatchSphericalTensorField,
+    0
+);
+defineNamedTemplateTypeNameAndDebug
+(
+    calculatedProcessorFvPatchSymmTensorField,
+    0
+);
+defineNamedTemplateTypeNameAndDebug
+(
+    calculatedProcessorFvPatchTensorField,
+    0
+);
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2017 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -59,10 +59,11 @@ Foam::jumpCyclicFvPatchField<Type>::jumpCyclicFvPatchField
 (
     const fvPatch& p,
     const DimensionedField<Type, volMesh>& iF,
-    const dictionary& dict
+    const dictionary& dict,
+    const bool valueRequired
 )
 :
-    cyclicFvPatchField<Type>(p, iF, dict)
+    cyclicFvPatchField<Type>(p, iF, dict, valueRequired)
 {
     // Call this evaluation in derived classes
     //this->evaluate(Pstream::commsTypes::blocking);
@@ -100,8 +101,8 @@ Foam::jumpCyclicFvPatchField<Type>::patchNeighbourField() const
     const labelUList& nbrFaceCells =
         this->cyclicPatch().neighbFvPatch().faceCells();
 
-    tmp<Field<Type>> tpnf(new Field<Type>(this->size()));
-    Field<Type>& pnf = tpnf.ref();
+    auto tpnf = tmp<Field<Type>>::New(this->size());
+    auto& pnf = tpnf.ref();
 
     Field<Type> jf(this->jump());
     if (!this->cyclicPatch().owner())
@@ -136,6 +137,8 @@ void Foam::jumpCyclicFvPatchField<Type>::updateInterfaceMatrix
 (
     solveScalarField& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const solveScalarField& psiInternal,
     const scalarField& coeffs,
     const direction cmpt,
@@ -151,6 +154,8 @@ void Foam::jumpCyclicFvPatchField<Type>::updateInterfaceMatrix
 (
     Field<Type>& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const Field<Type>& psiInternal,
     const scalarField& coeffs,
     const Pstream::commsTypes
@@ -159,7 +164,10 @@ void Foam::jumpCyclicFvPatchField<Type>::updateInterfaceMatrix
     Field<Type> pnf(this->size());
 
     const labelUList& nbrFaceCells =
-        this->cyclicPatch().neighbFvPatch().faceCells();
+        lduAddr.patchAddr
+        (
+            this->cyclicPatch().neighbPatchID()
+        );
 
     // only apply jump to original field
     if (&psiInternal == &this->primitiveField())
@@ -187,8 +195,10 @@ void Foam::jumpCyclicFvPatchField<Type>::updateInterfaceMatrix
     // Transform according to the transformation tensors
     this->transformCoupleField(pnf);
 
+    const labelUList& faceCells = lduAddr.patchAddr(patchId);
+
     // Multiply the field by coefficients and add into the result
-    this->addToInternalField(result, !add, coeffs, pnf);
+    this->addToInternalField(result, !add, faceCells, coeffs, pnf);
 }
 
 

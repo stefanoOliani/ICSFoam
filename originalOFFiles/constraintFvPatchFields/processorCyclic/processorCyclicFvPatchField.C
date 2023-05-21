@@ -27,7 +27,6 @@ License
 
 #include "processorCyclicFvPatchField.H"
 #include "processorCyclicFvPatch.H"
-#include "demandDrivenData.H"
 #include "transformField.H"
 
 // * * * * * * * * * * * * * * * * Constructors * * * * * * * * * * * * * * //
@@ -107,7 +106,7 @@ Foam::processorCyclicFvPatchField<Type>::processorCyclicFvPatchField
             << "\n    for patch " << p.name()
             << " of field " << this->internalField().name()
             << " in file " << this->internalField().objectPath()
-            << exit(FatalIOError);
+            << exit(FatalError);
     }
 }
 

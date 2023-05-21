@@ -10,7 +10,7 @@ rm -r $FOAM_SRC/finiteVolume/fields/fvPatchFields/constraint/
 
 cp -r originalOFFiles/constraintFvPatchFields/ $FOAM_SRC/finiteVolume/fields/fvPatchFields/constraint/
 
-This will basically replace the constraintFvPatchFieds with the new ones (the only difference is just that a few private members have been made public). Then recompile the OF finiteVolume library with:
+This will basically replace the constraintFvPatchFieds with the new ones (a few private members have been made public, and some changes were implemented to obtain the correct behaviour on cyclics an cyclicAMIs with a rotational transformation - please be aware that this could generate errors if used with other OF solvers!). Then recompile the OF finiteVolume library with:
 
 wmake libso /home/stefano/OpenFOAM/OpenFOAM-v2112/src/finiteVolume/
 

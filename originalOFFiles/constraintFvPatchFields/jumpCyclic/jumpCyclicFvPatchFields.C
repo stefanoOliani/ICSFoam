@@ -44,6 +44,8 @@ void Foam::jumpCyclicFvPatchField<Foam::scalar>::updateInterfaceMatrix
 (
     solveScalarField& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const solveScalarField& psiInternal,
     const scalarField& coeffs,
     const direction cmpt,
@@ -53,7 +55,10 @@ void Foam::jumpCyclicFvPatchField<Foam::scalar>::updateInterfaceMatrix
     solveScalarField pnf(this->size());
 
     const labelUList& nbrFaceCells =
-        this->cyclicPatch().neighbFvPatch().faceCells();
+        lduAddr.patchAddr
+        (
+            this->cyclicPatch().neighbPatchID()
+        );
 
     // only apply jump to original field
     if
@@ -85,8 +90,10 @@ void Foam::jumpCyclicFvPatchField<Foam::scalar>::updateInterfaceMatrix
     // Transform according to the transformation tensors
     this->transformCoupleField(pnf, cmpt);
 
+    const labelUList& faceCells = lduAddr.patchAddr(patchId);
+
     // Multiply the field by coefficients and add into the result
-    this->addToInternalField(result, !add, coeffs, pnf);
+    this->addToInternalField(result, !add, faceCells, coeffs, pnf);
 }
 
 
@@ -95,6 +102,8 @@ void Foam::jumpCyclicFvPatchField<Foam::vector>::updateInterfaceMatrix
 (
     solveScalarField& result,
     const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
     const solveScalarField& psiInternal,
     const scalarField& coeffs,
     const direction cmpt,
@@ -104,7 +113,10 @@ void Foam::jumpCyclicFvPatchField<Foam::vector>::updateInterfaceMatrix
     solveScalarField pnf(this->size());
 
     const labelUList& nbrFaceCells =
-        this->cyclicPatch().neighbFvPatch().faceCells();
+        lduAddr.patchAddr
+        (
+            this->cyclicPatch().neighbPatchID()
+        );
 
     const Field<vector>& iField = this->primitiveField();
 
@@ -140,8 +152,10 @@ void Foam::jumpCyclicFvPatchField<Foam::vector>::updateInterfaceMatrix
     // Transform according to the transformation tensors
     this->transformCoupleField(pnf, cmpt);
 
+    const labelUList& faceCells = lduAddr.patchAddr(patchId);
+
     // Multiply the field by coefficients and add into the result
-    this->addToInternalField(result, !add, coeffs, pnf);
+    this->addToInternalField(result, !add, faceCells, coeffs, pnf);
 }
 
 // ************************************************************************* //

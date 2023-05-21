@@ -160,9 +160,14 @@ public:
         // Access
 
             //- Does the patch field perform the transformation
+//            virtual bool doTransform() const
+//            {
+//                return !(procPatch_.parallel() || pTraits<Type>::rank == 0);
+//            }
+
             virtual bool doTransform() const
             {
-                return !(procPatch_.parallel() || pTraits<Type>::rank == 0);
+                return !(procPatch_.parallel());
             }
 
             //- Return face transformation tensor

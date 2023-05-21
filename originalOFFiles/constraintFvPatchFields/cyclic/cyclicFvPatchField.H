@@ -93,6 +93,7 @@ class cyclicFvPatchField
 
 public:
 
+
     //- Runtime type information
     TypeName(cyclicFvPatch::typeName_());
 
@@ -111,7 +112,8 @@ public:
         (
             const fvPatch&,
             const DimensionedField<Type, volMesh>&,
-            const dictionary&
+            const dictionary&,
+            const bool valueRequired = true
         );
 
         //- Construct by mapping given cyclicFvPatchField onto a new patch
@@ -182,6 +184,8 @@ public:
             (
                 solveScalarField& result,
                 const bool add,
+                const lduAddressing& lduAddr,
+                const label patchId,
                 const solveScalarField& psiInternal,
                 const scalarField& coeffs,
                 const direction cmpt,
@@ -193,10 +197,22 @@ public:
             (
                 Field<Type>& result,
                 const bool add,
+                const lduAddressing& lduAddr,
+                const label patchId,
                 const Field<Type>& psiInternal,
                 const scalarField& coeffs,
                 const Pstream::commsTypes commsType
             ) const;
+
+
+            //- Manipulate matrix
+            virtual void manipulateMatrix
+            (
+                fvMatrix<Type>& m,
+                const label iMatrix,
+                const direction cmp
+            );
+
 
 
         // Cyclic coupled interface functions
