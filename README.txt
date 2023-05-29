@@ -21,6 +21,8 @@ For example, to decompose and reconstruct cases you need to recompile decomposeP
 
 If you use the code, please cite either of our papers: https://doi.org/10.1016/j.cpc.2023.108673, https://doi.org/10.3390/machines10040279
 
+NB: Due to some changes to thermophysical libraries in latest OF versions, it is necessary to include Tref 0 in the thermodynamics dictionary of constant/thermophysical properties file (see tutorials setup)!!!
+
 Many thanks to Dr. Nicola Casari and Dr. Mauro Carnevale for their help during the code implementation and test phases!
 
 Stefano Oliani
