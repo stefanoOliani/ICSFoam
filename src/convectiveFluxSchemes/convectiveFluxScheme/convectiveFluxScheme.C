@@ -31,9 +31,6 @@ License
 #include "blockFvOperators.H"
 #include "addToRunTimeSelectionTable.H"
 
-#include "MUSCLInterpolation.H"
-#include "MUSCLInterpolate.H"
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
