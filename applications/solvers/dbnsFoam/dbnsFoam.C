@@ -37,9 +37,6 @@ License
 #include "viscousFluxScheme.H"
 #include "fvOptions.H"
 
-#include "fixedRhoFvPatchScalarField.H"
-
-#include "MUSCLInterpolation.H"
 #include "emptyFvPatch.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
