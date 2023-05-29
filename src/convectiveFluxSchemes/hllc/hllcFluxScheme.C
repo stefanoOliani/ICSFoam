@@ -28,7 +28,6 @@ License
 #include "hllcFluxScheme.H"
 
 #include "addToRunTimeSelectionTable.H"
-#include "MUSCLInterpolation.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
