@@ -43,7 +43,6 @@ Authors
 
 #include "convectiveFluxScheme.H"
 #include "psiThermo.H"
-#include "MUSCLInterpolate.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
