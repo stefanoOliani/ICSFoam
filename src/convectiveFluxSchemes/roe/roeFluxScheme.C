@@ -24,7 +24,6 @@ License
 
 #include "addToRunTimeSelectionTable.H"
 #include "roeFluxScheme.H"
-#include "MUSCLInterpolation.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
